@@ -1,4 +1,4 @@
-# Design 03 - Malware Detection Integrating Hybrid Machine Learning Model
+# PhishR - Design 03 Malware Detection Integrating Hybrid Machine Learning Model
 This is the project contains three design option for malware detection web-based system integrating hybrid machine learning models. This is the Swinburne university team projects with 5 members.
 
 ## Details
