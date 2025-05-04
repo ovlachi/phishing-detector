@@ -9,12 +9,8 @@ from typing import List, Optional, Dict
 import uvicorn
 import time
 import os
+import traceback
 from pathlib import Path
-from src.api.auth import (
-    Token, User, authenticate_user, create_access_token, 
-    get_current_active_user, ACCESS_TOKEN_EXPIRE_MINUTES, fake_users_db,
-    get_password_hash  # Add this import
-)
 
 # Add project root to path
 import sys
@@ -24,7 +20,8 @@ if project_root not in sys.path:
 
 from src.api.auth import (
     Token, User, authenticate_user, create_access_token, 
-    get_current_active_user, ACCESS_TOKEN_EXPIRE_MINUTES, fake_users_db
+    get_current_active_user, ACCESS_TOKEN_EXPIRE_MINUTES, fake_users_db,
+    get_password_hash
 )
 from src.predict import load_model_and_pipeline, classify_url, classify_batch
 
@@ -43,10 +40,7 @@ templates = Jinja2Templates(directory=os.path.join(os.path.dirname(__file__), "t
 print("Loading model and pipeline...")
 try:
     # Use absolute path
-    import os
-    project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     model_dir = os.path.join(project_root, "data/processed")
-    
     classifier, pipeline = load_model_and_pipeline(model_dir)
     print("Model and pipeline loaded successfully")
 except Exception as e:
@@ -103,7 +97,34 @@ async def login_page(request: Request):
 async def register_page(request: Request):
     return templates.TemplateResponse("register.html", {"request": request})
 
-# Register form submission 
+# Login form submission
+@app.post("/login")
+async def login(request: Request, username: str = Form(...), password: str = Form(...)):
+    user = authenticate_user(fake_users_db, username, password)
+    if not user:
+        return templates.TemplateResponse(
+            "login.html", 
+            {"request": request, "error": "Invalid username or password"}
+        )
+    
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={"sub": user.username}, expires_delta=access_token_expires
+    )
+    
+    response = RedirectResponse(url="/", status_code=303)
+    # Modified cookie settings for JavaScript access
+    response.set_cookie(
+        key="access_token",
+        value=f"Bearer {access_token}",
+        httponly=False,  # Allow JavaScript access
+        max_age=1800,
+        expires=1800,
+        samesite="lax"
+    )
+    return response
+
+# Register form submission
 @app.post("/register")
 async def register(
     request: Request, 
@@ -135,31 +156,6 @@ async def register(
         {"request": request, "message": "Registration successful. Please login."}
     )
 
-# Login form submission
-@app.post("/login")
-async def login(request: Request, username: str = Form(...), password: str = Form(...)):
-    user = authenticate_user(fake_users_db, username, password)
-    if not user:
-        return templates.TemplateResponse(
-            "login.html", 
-            {"request": request, "error": "Invalid username or password"}
-        )
-    
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(
-        data={"sub": user.username}, expires_delta=access_token_expires
-    )
-    
-    response = RedirectResponse(url="/", status_code=303)
-    response.set_cookie(
-        key="access_token",
-        value=f"Bearer {access_token}",
-        httponly=True,
-        max_age=1800,
-        expires=1800,
-    )
-    return response
-
 # Logout
 @app.get("/logout")
 async def logout():
@@ -167,10 +163,10 @@ async def logout():
     response.delete_cookie(key="access_token")
     return response
 
-# Health check endpoint
-@app.get("/health")
-def health_check():
-    return {"status": "ok", "message": "Phishing and Malware Detection API is running"}
+# Authentication status endpoint
+@app.get("/auth-status")
+async def auth_status(current_user: User = Depends(get_current_active_user)):
+    return {"authenticated": True, "username": current_user.username}
 
 # Single URL classification (public)
 @app.post("/classify", response_model=PredictionResult)
@@ -180,7 +176,7 @@ async def api_classify_url(request: UrlRequest):
             raise HTTPException(status_code=500, detail="Model not loaded")
         
         url = str(request.url)
-        print(f"Processing URL: {url}")  # Add debug output
+        print(f"Processing URL: {url}")  # Debug output
         
         result = classify_url(url, classifier, pipeline)
         
@@ -197,10 +193,9 @@ async def api_classify_url(request: UrlRequest):
                 probabilities=result['probabilities']
             )
     except Exception as e:
-        import traceback
-        traceback.print_exc()  # Print the full error to your console
+        traceback.print_exc()  # Print the full error
         return PredictionResult(
-            url=url,
+            url=str(request.url),
             error=f"Error processing URL: {str(e)}"
         )
 
@@ -210,34 +205,38 @@ async def api_classify_batch(
     request: BatchUrlRequest, 
     current_user: User = Depends(get_current_active_user)
 ):
-    if classifier is None or pipeline is None:
-        raise HTTPException(status_code=500, detail="Model not loaded")
-    
-    urls = [str(url) for url in request.urls]
-    
-    start_time = time.time()
-    results = classify_batch(urls, classifier, pipeline)
-    processing_time = time.time() - start_time
-    
-    response_results = []
-    for result in results:
-        if 'error' in result and result['error']:
-            response_results.append(PredictionResult(
-                url=result['url'],
-                error=result['error']
-            ))
-        else:
-            response_results.append(PredictionResult(
-                url=result['url'],
-                class_id=result['class_id'],
-                class_name=result['class'],
-                probabilities=result['probabilities']
-            ))
-    
-    return BatchPredictionResult(
-        results=response_results,
-        processing_time=processing_time
-    )
+    try:
+        if classifier is None or pipeline is None:
+            raise HTTPException(status_code=500, detail="Model not loaded")
+        
+        urls = [str(url) for url in request.urls]
+        
+        start_time = time.time()
+        results = classify_batch(urls, classifier, pipeline)
+        processing_time = time.time() - start_time
+        
+        response_results = []
+        for result in results:
+            if 'error' in result and result['error']:
+                response_results.append(PredictionResult(
+                    url=result['url'],
+                    error=result['error']
+                ))
+            else:
+                response_results.append(PredictionResult(
+                    url=result['url'],
+                    class_id=result['class_id'],
+                    class_name=result['class'],
+                    probabilities=result['probabilities']
+                ))
+        
+        return BatchPredictionResult(
+            results=response_results,
+            processing_time=processing_time
+        )
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Error processing batch: {str(e)}")
 
 # User info endpoint
 @app.get("/users/me", response_model=User)
@@ -245,4 +244,4 @@ async def read_users_me(current_user: User = Depends(get_current_active_user)):
     return current_user
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)
