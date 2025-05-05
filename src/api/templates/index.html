@@ -3,49 +3,136 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Phishing & Malware Detection</title>
+    <title>PhishR - Phishing & Malware Detection</title>
     <link rel="stylesheet" href="/static/css/styles.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css" />
   </head>
   <body>
-    <div class="auth-bar">
-      <span id="user-status">Not logged in</span>
-      <a href="/login" id="login-link">Login</a>
-      <a href="/logout" id="logout-link" style="display: none">Logout</a>
-    </div>
+    <div class="layout">
+      <!-- Sidebar -->
+      <aside class="sidebar">
+        <div class="sidebar-header">
+          <div class="app-name">
+            <i class="fa-solid fa-shield-halved"></i>
+            PhishR
+          </div>
+        </div>
+        <nav class="nav-links">
+          <a href="/" class="nav-item active">
+            <i class="fa-solid fa-house"></i>
+            Dashboard
+          </a>
+          <a href="/history" class="nav-item">
+            <i class="fa-solid fa-clock-rotate-left"></i>
+            History
+          </a>
+          <a href="/settings" class="nav-item">
+            <i class="fa-solid fa-gear"></i>
+            Settings
+          </a>
+          <a href="/about" class="nav-item">
+            <i class="fa-solid fa-circle-info"></i>
+            About
+          </a>
+        </nav>
+      </aside>
 
-    <h1>Phishing & Malware Detection</h1>
+      <!-- Main Content -->
+      <div class="main-content">
+        <!-- Top Navigation Bar -->
+        <header class="topbar">
+          <div class="breadcrumb">
+            <h3>URL Analysis</h3>
+          </div>
+          <div id="auth-section">
+            <!-- If not logged in -->
+            <div id="login-section" style="display: none">
+              <a href="/login" class="btn btn-primary btn-sm"> <i class="fa-solid fa-right-to-bracket"></i> Login </a>
+            </div>
 
-    <div class="tabs">
-      <div class="tab active" onclick="switchTab('single')">Single URL</div>
-      <div class="tab" onclick="switchTab('batch')">Batch URLs</div>
-    </div>
+            <!-- If logged in -->
+            <div id="user-section" style="display: none">
+              <div class="user-dropdown" id="user-dropdown">
+                <div class="avatar" id="user-avatar">U</div>
+                <span id="username">User</span>
+                <i class="fa-solid fa-chevron-down"></i>
+              </div>
+            </div>
+          </div>
+        </header>
 
-    <div id="single-tab" class="tab-content active container">
-      <div class="input-group">
-        <label for="url-input">Enter URL to check:</label>
-        <input type="text" id="url-input" placeholder="https://example.com" />
+        <!-- Main Content Area -->
+        <main class="content">
+          <div class="page-header">
+            <h1>URL Analysis</h1>
+            <p>Analyze URLs to detect phishing and malware distribution attempts</p>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <h2 class="card-title">URL Analyzer</h2>
+            </div>
+            <div class="card-body">
+              <!-- Tabs -->
+              <div class="tabs">
+                <div class="tab active" onclick="switchTab('single')">Single URL</div>
+                <div class="tab" onclick="switchTab('batch')">Batch URLs</div>
+              </div>
+
+              <!-- Single URL Tab -->
+              <div id="single-tab" class="tab-content active">
+                <div class="form-group">
+                  <label for="url-input">Enter URL to analyze:</label>
+                  <input type="url" id="url-input" placeholder="https://example.com" required />
+                </div>
+                <button class="btn btn-primary" onclick="analyzeSingleUrl()">
+                  <i class="fa-solid fa-magnifying-glass"></i>
+                  Analyze URL
+                  <span id="single-loader" class="loader"></span>
+                </button>
+              </div>
+
+              <!-- Batch URLs Tab -->
+              <div id="batch-tab" class="tab-content">
+                <div id="batch-auth-note" class="alert alert-info">
+                  <i class="fa-solid fa-circle-info"></i>
+                  You need to be logged in to use batch URL analysis.
+                  <a href="/login">Login now</a>
+                </div>
+
+                <div class="form-group">
+                  <label for="urls-input">Enter URLs to analyze (one per line):</label>
+                  <textarea id="urls-input" placeholder="https://example.com&#10;https://example.org" rows="6"></textarea>
+                </div>
+                <button id="batch-button" class="btn btn-primary" onclick="analyzeBatchUrls()" disabled>
+                  <i class="fa-solid fa-magnifying-glass"></i>
+                  Analyze URLs
+                  <span id="batch-loader" class="loader"></span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Results Section (initially hidden) -->
+          <div id="results" style="display: none">
+            <div class="results-header">
+              <h3>Analysis Results</h3>
+            </div>
+            <div id="results-container">
+              <!-- Results will be inserted here by JavaScript -->
+            </div>
+          </div>
+        </main>
       </div>
-      <button onclick="analyzeSingleUrl()">Analyze URL <span id="single-loader" class="loader"></span></button>
     </div>
 
-    <div id="batch-tab" class="tab-content container">
-      <div class="auth-note" id="batch-auth-note">
-        You need to be logged in to use batch URL analysis.
-        <a href="/login">Login now</a>
-      </div>
-
-      <div class="input-group">
-        <label for="urls-input">Enter URLs to check (one per line):</label>
-        <textarea
-          id="urls-input"
-          placeholder="https://example.com
-https://example.org"
-        ></textarea>
-      </div>
-      <button onclick="analyzeBatchUrls()" id="batch-button" disabled>Analyze URLs <span id="batch-loader" class="loader"></span></button>
+    <!-- User dropdown menu -->
+    <div id="user-menu" class="dropdown-menu" style="display: none; position: absolute; right: 20px; top: 60px; background: white; border-radius: 4px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); width: 200px; z-index: 100">
+      <a href="/profile" class="dropdown-item"> <i class="fa-solid fa-user"></i> Profile </a>
+      <a href="/history" class="dropdown-item"> <i class="fa-solid fa-clock-rotate-left"></i> History </a>
+      <div class="dropdown-divider"></div>
+      <a href="/logout" class="dropdown-item"> <i class="fa-solid fa-sign-out-alt"></i> Logout </a>
     </div>
-
-    <div id="results" style="display: none"></div>
 
     <script src="/static/js/scripts.js"></script>
   </body>

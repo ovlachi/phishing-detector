@@ -1,117 +1,162 @@
 /**
- * Phishing & Malware Detection - Main JavaScript
- * Handles UI interactions, authentication, and URL analysis
+ * PhishR - Modern Phishing & Malware Detection Application
+ * Main JavaScript File
  */
 
-// Authentication state
+// Global State
 let isAuthenticated = false;
+let currentUser = null;
 
 // Document ready function
 document.addEventListener("DOMContentLoaded", function () {
-  // Check authentication status
+  // Initialize authentication
   checkAuth();
 
-  // Initialize tabs if they exist
-  if (document.querySelector(".tabs")) {
-    initTabs();
-  }
+  // Set up event listeners
+  setupEventListeners();
 });
 
 /**
- * Check authentication status
+ * Set up various event listeners
+ */
+function setupEventListeners() {
+  // User dropdown toggle
+  const userDropdown = document.getElementById("user-dropdown");
+  if (userDropdown) {
+    userDropdown.addEventListener("click", function (e) {
+      e.stopPropagation();
+      toggleUserMenu();
+    });
+  }
+
+  // Close dropdown when clicking outside
+  document.addEventListener("click", function () {
+    const userMenu = document.getElementById("user-menu");
+    if (userMenu && userMenu.style.display === "block") {
+      userMenu.style.display = "none";
+    }
+  });
+}
+
+/**
+ * Toggle user dropdown menu
+ */
+function toggleUserMenu() {
+  const userMenu = document.getElementById("user-menu");
+  if (userMenu) {
+    userMenu.style.display = userMenu.style.display === "block" ? "none" : "block";
+  }
+}
+
+/**
+ * Check authentication status via API
  */
 function checkAuth() {
-  // Check authentication status via API
   fetch("/auth-status", {
     method: "GET",
     credentials: "include"
   })
     .then((response) => {
       if (response.status === 200) {
-        // User is authenticated
-        isAuthenticated = true;
-        return response.json();
+        return response.json().then((data) => {
+          isAuthenticated = true;
+          currentUser = data;
+          updateAuthUI(true, data);
+        });
       } else {
-        // User is not authenticated
         isAuthenticated = false;
-        throw new Error("Not authenticated");
-      }
-    })
-    .then((data) => {
-      // Update UI for authenticated user
-      document.getElementById("user-status").textContent = `Logged in as ${data.username}`;
-      document.getElementById("login-link").style.display = "none";
-      document.getElementById("logout-link").style.display = "inline";
-
-      // Update batch URL section if it exists
-      if (document.getElementById("batch-auth-note")) {
-        document.getElementById("batch-auth-note").style.display = "none";
-        document.getElementById("batch-button").disabled = false;
+        currentUser = null;
+        updateAuthUI(false);
+        return Promise.reject("Not authenticated");
       }
     })
     .catch((error) => {
-      // Update UI for unauthenticated user
-      document.getElementById("user-status").textContent = "Not logged in";
-      document.getElementById("login-link").style.display = "inline";
-      document.getElementById("logout-link").style.display = "none";
-
-      // Update batch URL section if it exists
-      if (document.getElementById("batch-auth-note")) {
-        document.getElementById("batch-auth-note").style.display = "block";
-        document.getElementById("batch-button").disabled = true;
-      }
+      console.log("Authentication check failed:", error);
     });
 }
 
 /**
- * Initialize tab functionality
+ * Update UI based on authentication status
  */
-function initTabs() {
-  const tabs = document.querySelectorAll(".tab");
+function updateAuthUI(authenticated, userData = null) {
+  const loginSection = document.getElementById("login-section");
+  const userSection = document.getElementById("user-section");
+  const batchAuthNote = document.getElementById("batch-auth-note");
+  const batchButton = document.getElementById("batch-button");
 
-  tabs.forEach((tab, index) => {
-    tab.addEventListener("click", () => switchTab(index === 0 ? "single" : "batch"));
-  });
+  if (authenticated && userData) {
+    // Show user section, hide login button
+    if (loginSection) loginSection.style.display = "none";
+    if (userSection) userSection.style.display = "flex";
+
+    // Update user information
+    const usernameElement = document.getElementById("username");
+    const userAvatar = document.getElementById("user-avatar");
+
+    if (usernameElement) usernameElement.textContent = userData.username;
+    if (userAvatar) userAvatar.textContent = userData.username.charAt(0).toUpperCase();
+
+    // Enable batch URL analysis
+    if (batchAuthNote) batchAuthNote.style.display = "none";
+    if (batchButton) batchButton.disabled = false;
+  } else {
+    // Show login button, hide user section
+    if (loginSection) loginSection.style.display = "flex";
+    if (userSection) userSection.style.display = "none";
+
+    // Disable batch URL analysis
+    if (batchAuthNote) batchAuthNote.style.display = "block";
+    if (batchButton) batchButton.disabled = true;
+  }
 }
 
 /**
  * Switch between tabs
  */
 function switchTab(tabName) {
-  // Hide all tabs
-  document.querySelectorAll(".tab-content").forEach((tab) => {
-    tab.classList.remove("active");
-  });
-  document.querySelectorAll(".tab").forEach((tab) => {
-    tab.classList.remove("active");
-  });
+  // Get tabs and tab content elements
+  const tabs = document.querySelectorAll(".tab");
+  const tabContents = document.querySelectorAll(".tab-content");
 
-  // Show selected tab
-  document.getElementById(`${tabName}-tab`).classList.add("active");
-  document.querySelector(`.tab:nth-child(${tabName === "single" ? 1 : 2})`).classList.add("active");
+  // Remove active class from all tabs and contents
+  tabs.forEach((tab) => tab.classList.remove("active"));
+  tabContents.forEach((content) => content.classList.remove("active"));
+
+  // Add active class to selected tab and content
+  if (tabName === "single") {
+    tabs[0].classList.add("active");
+    document.getElementById("single-tab").classList.add("active");
+  } else if (tabName === "batch") {
+    tabs[1].classList.add("active");
+    document.getElementById("batch-tab").classList.add("active");
+  }
 }
 
 /**
- * Show loading spinner
+ * Show loader animation
  */
 function showLoader(type) {
-  document.getElementById(`${type}-loader`).style.display = "inline-block";
+  const loader = document.getElementById(`${type}-loader`);
+  if (loader) loader.style.display = "inline-block";
 }
 
 /**
- * Hide loading spinner
+ * Hide loader animation
  */
 function hideLoader(type) {
-  document.getElementById(`${type}-loader`).style.display = "none";
+  const loader = document.getElementById(`${type}-loader`);
+  if (loader) loader.style.display = "none";
 }
 
 /**
  * Analyze a single URL
  */
 function analyzeSingleUrl() {
-  const url = document.getElementById("url-input").value.trim();
+  const urlInput = document.getElementById("url-input");
+  const url = urlInput.value.trim();
+
   if (!url) {
-    alert("Please enter a URL");
+    alert("Please enter a URL to analyze");
     return;
   }
 
@@ -131,8 +176,8 @@ function analyzeSingleUrl() {
     })
     .catch((error) => {
       hideLoader("single");
-      console.error("Error:", error);
-      alert("An error occurred. Please try again.");
+      console.error("Error analyzing URL:", error);
+      alert("An error occurred while analyzing the URL. Please try again.");
     });
 }
 
@@ -141,14 +186,16 @@ function analyzeSingleUrl() {
  */
 function analyzeBatchUrls() {
   if (!isAuthenticated) {
-    alert("Please login to use batch URL analysis");
+    alert("Please log in to use batch URL analysis");
     window.location.href = "/login";
     return;
   }
 
-  const urlsText = document.getElementById("urls-input").value.trim();
+  const urlsInput = document.getElementById("urls-input");
+  const urlsText = urlsInput.value.trim();
+
   if (!urlsText) {
-    alert("Please enter at least one URL");
+    alert("Please enter at least one URL to analyze");
     return;
   }
 
@@ -164,22 +211,11 @@ function analyzeBatchUrls() {
 
   showLoader("batch");
 
-  // Get token from cookie
-  let token = "";
-  const cookies = document.cookie.split(";");
-  for (let cookie of cookies) {
-    const [name, value] = cookie.trim().split("=");
-    if (name === "access_token") {
-      token = value.replace("Bearer ", "");
-      break;
-    }
-  }
-
   fetch("/classify-batch", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`
+      Authorization: "Bearer " + getAuthToken()
     },
     body: JSON.stringify({ urls })
   })
@@ -187,8 +223,8 @@ function analyzeBatchUrls() {
       if (response.status === 401) {
         // Unauthorized - token expired or invalid
         isAuthenticated = false;
-        checkAuth();
-        alert("Your session has expired. Please login again.");
+        updateAuthUI(false);
+        alert("Your session has expired. Please log in again.");
         window.location.href = "/login";
         throw new Error("Unauthorized");
       }
@@ -202,71 +238,125 @@ function analyzeBatchUrls() {
     .catch((error) => {
       hideLoader("batch");
       if (error.message !== "Unauthorized") {
-        console.error("Error:", error);
-        alert("An error occurred. Please try again.");
+        console.error("Error analyzing URLs:", error);
+        alert("An error occurred while analyzing the URLs. Please try again.");
       }
     });
 }
 
 /**
- * Display classification results
+ * Get auth token from cookies
+ */
+function getAuthToken() {
+  const cookies = document.cookie.split(";");
+  for (let cookie of cookies) {
+    const [name, value] = cookie.trim().split("=");
+    if (name === "access_token") {
+      return value.replace("Bearer ", "");
+    }
+  }
+  return "";
+}
+
+/**
+ * Display analysis results in the UI
  */
 function displayResults(results) {
-  const resultsDiv = document.getElementById("results");
-  resultsDiv.style.display = "block";
-  resultsDiv.innerHTML = "<h2>Results</h2>";
+  const resultsContainer = document.getElementById("results-container");
+  const resultsSection = document.getElementById("results");
 
+  if (!resultsContainer || !resultsSection) return;
+
+  // Clear previous results
+  resultsContainer.innerHTML = "";
+
+  // Show results section
+  resultsSection.style.display = "block";
+
+  // Process each result
   results.forEach((result) => {
     const resultItem = document.createElement("div");
     resultItem.className = "result-item";
 
     if (result.error) {
+      // Display error
       resultItem.innerHTML = `
-                <div><strong>URL:</strong> ${result.url}</div>
-                <div class="error">Error: ${result.error}</div>
+                <div class="result-url">${result.url}</div>
+                <div class="error">
+                    <i class="fa-solid fa-circle-exclamation"></i>
+                    Error: ${result.error}
+                </div>
             `;
     } else {
-      let classStyle = "";
-      if (result.class_name === "Legitimate") classStyle = "legitimate";
-      else if (result.class_name === "Credential Phishing") classStyle = "phishing";
-      else if (result.class_name === "Malware Distribution") classStyle = "malware";
+      // Determine classification style
+      let badgeClass = "";
+      let icon = "";
 
+      if (result.class_name === "Legitimate") {
+        badgeClass = "legitimate";
+        icon = "fa-shield-check";
+      } else if (result.class_name === "Credential Phishing") {
+        badgeClass = "phishing";
+        icon = "fa-fishing-hook";
+      } else if (result.class_name === "Malware Distribution") {
+        badgeClass = "malware";
+        icon = "fa-virus";
+      }
+
+      // Create probability bar segments
       let probabilityBars = "";
+      let probabilityDetails = "";
+
       if (result.probabilities) {
         const barColors = {
-          Legitimate: "#2ecc71",
-          "Credential Phishing": "#e74c3c",
-          "Malware Distribution": "#c0392b"
+          Legitimate: "#22c55e",
+          "Credential Phishing": "#ef4444",
+          "Malware Distribution": "#f59e0b"
         };
 
         probabilityBars = '<div class="probability-bar">';
+        probabilityDetails = '<div class="probability-details">';
+
         for (const [className, prob] of Object.entries(result.probabilities)) {
+          const color = barColors[className] || "#6b7280";
+          const percentage = (prob * 100).toFixed(1);
+
           probabilityBars += `
                         <div class="probability-segment" 
-                             style="width: ${prob * 100}%; background-color: ${barColors[className] || "#999"};"
-                             title="${className}: ${(prob * 100).toFixed(1)}%">
+                             style="width: ${percentage}%; background-color: ${color};"
+                             title="${className}: ${percentage}%">
+                        </div>
+                    `;
+
+          probabilityDetails += `
+                        <div class="probability-item">
+                            <div class="probability-color" style="background-color: ${color};"></div>
+                            ${className}: ${percentage}%
                         </div>
                     `;
         }
+
         probabilityBars += "</div>";
+        probabilityDetails += "</div>";
       }
 
+      // Create result HTML
       resultItem.innerHTML = `
-                <div><strong>URL:</strong> ${result.url}</div>
-                <div><strong>Classification:</strong> <span class="${classStyle}">${result.class_name}</span></div>
-                ${probabilityBars}
-                <div style="margin-top: 5px;">
-                    <strong>Probabilities:</strong>
-                    ${Object.entries(result.probabilities || {})
-                      .map(([className, prob]) => `${className}: ${(prob * 100).toFixed(1)}%`)
-                      .join(", ")}
+                <div class="result-url">${result.url}</div>
+                <div class="result-classification">
+                    <span class="classification-badge ${badgeClass}">
+                        <i class="fa-solid ${icon}"></i>
+                        ${result.class_name}
+                    </span>
                 </div>
+                ${probabilityBars}
+                ${probabilityDetails}
             `;
     }
 
-    resultsDiv.appendChild(resultItem);
+    resultsContainer.appendChild(resultItem);
   });
+
+  // Scroll to results
+  resultsSection.scrollIntoView({ behavior: "smooth" });
 }
-/**
- * Logout function
- */

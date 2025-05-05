@@ -3,40 +3,61 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Register - Phishing Detection</title>
+    <title>Register - PhishR</title>
     <link rel="stylesheet" href="/static/css/styles.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css" />
   </head>
   <body>
-    <h1>Register</h1>
+    <div class="auth-page">
+      <div class="auth-card">
+        <div class="auth-header">
+          <div class="auth-logo">
+            <i class="fa-solid fa-shield-halved"></i>
+            PhishR
+          </div>
+          <p>Create a new account</p>
+        </div>
 
-    <div class="container">
-      {% if error %}
-      <div class="error">{{ error }}</div>
-      {% endif %}
+        <div class="auth-body">
+          {% if error %}
+          <div class="alert alert-danger">
+            <i class="fa-solid fa-circle-exclamation"></i>
+            {{ error }}
+          </div>
+          {% endif %}
 
-      <form action="/register" method="post" class="auth-form">
-        <div class="input-group">
-          <label for="username">Username:</label>
-          <input type="text" id="username" name="username" required />
-        </div>
-        <div class="input-group">
-          <label for="email">Email:</label>
-          <input type="email" id="email" name="email" required />
-        </div>
-        <div class="input-group">
-          <label for="full_name">Full Name:</label>
-          <input type="text" id="full_name" name="full_name" required />
-        </div>
-        <div class="input-group">
-          <label for="password">Password:</label>
-          <input type="password" id="password" name="password" required />
-        </div>
-        <button type="submit">Register</button>
-      </form>
+          <form action="/register" method="post" class="auth-form">
+            <div class="form-group">
+              <label for="username">Username</label>
+              <input type="text" id="username" name="username" placeholder="Choose a username" required />
+            </div>
 
-      <div class="links">
-        <p>Already have an account? <a href="/login">Login</a></p>
-        <p><a href="/">Back to Home</a></p>
+            <div class="form-group">
+              <label for="email">Email</label>
+              <input type="email" id="email" name="email" placeholder="Enter your email" required />
+            </div>
+
+            <div class="form-group">
+              <label for="full_name">Full Name</label>
+              <input type="text" id="full_name" name="full_name" placeholder="Enter your full name" required />
+            </div>
+
+            <div class="form-group">
+              <label for="password">Password</label>
+              <input type="password" id="password" name="password" placeholder="Create a strong password" required />
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block">
+              <i class="fa-solid fa-user-plus"></i>
+              Create Account
+            </button>
+          </form>
+        </div>
+
+        <div class="auth-footer">
+          <p>Already have an account? <a href="/login">Sign in</a></p>
+          <p><a href="/">Back to Home</a></p>
+        </div>
       </div>
     </div>
   </body>
