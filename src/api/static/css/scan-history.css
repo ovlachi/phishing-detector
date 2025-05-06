@@ -1,0 +1,193 @@
+/* PhishR Scan History Stylesheet
+----------------------------------------*/
+
+/* History Section
+----------------------------------------*/
+.history-section {
+    width: 100%;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.section-title h1 {
+    margin-bottom: 0.5rem;
+}
+
+/* History Table
+----------------------------------------*/
+.history-table-container {
+    width: 100%;
+    background-color: var(--white);
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--card-shadow);
+    overflow: auto;
+    margin-bottom: 1.5rem;
+}
+
+.history-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+}
+
+.history-table th, 
+.history-table td {
+    padding: 0.75rem 1rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.history-table th {
+    font-weight: 600;
+    color: var(--text-medium);
+    background-color: #FAFBFC;
+}
+
+.history-table td {
+    color: var(--text-medium);
+}
+
+.history-table tr:last-child td {
+    border-bottom: none;
+}
+
+.history-item {
+    transition: background-color 0.2s;
+}
+
+.history-item:hover {
+    background-color: #F5F9FF;
+}
+
+/* URL Column
+----------------------------------------*/
+.url-column {
+    min-width: 200px;
+    max-width: 300px;
+}
+
+.url-link {
+    color: var(--primary-blue);
+    text-decoration: none;
+    display: block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.url-link:hover {
+    text-decoration: underline;
+}
+
+/* Probability Column
+----------------------------------------*/
+.probability-legitimate {
+    color: var(--success-green);
+    font-weight: 500;
+}
+
+.probability-credential-phishing {
+    color: var(--phishing-red);
+    font-weight: 500;
+}
+
+.probability-malware-distribution {
+    color: #9C27B0; /* Purple */
+    font-weight: 500;
+}
+
+/* Pagination
+----------------------------------------*/
+.pagination {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.875rem;
+    color: var(--text-medium);
+}
+
+.pagination-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.pagination-btn {
+    background: none;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-md);
+    padding: 0.25rem;
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+    color: var(--text-medium);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.pagination-btn:hover:not(:disabled) {
+    background-color: #F5F5F5;
+    color: var(--text-dark);
+}
+
+.pagination-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.pagination-pages {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.current-page {
+    font-weight: 600;
+    color: var(--text-dark);
+}
+
+/* Responsive Table
+----------------------------------------*/
+@media (max-width: 1200px) {
+    .history-table th, 
+    .history-table td {
+        padding: 0.5rem 0.75rem;
+    }
+}
+
+@media (max-width: 992px) {
+    .section-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .history-table {
+        font-size: 0.75rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .history-table-container {
+        overflow-x: auto;
+    }
+    
+    .pagination {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: flex-start;
+    }
+    
+    .pagination-controls {
+        width: 100%;
+        justify-content: center;
+    }
+}

@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Scan History - PhishR - Phishing Detection with Machine Learning</title>
+    <meta name="description" content="View your PhishR scan history and previous URL scan results." />
+    <link rel="stylesheet" href="css/normalize.css" />
+    <link rel="stylesheet" href="css/styles.css" />
+    <link rel="stylesheet" href="css/dashboard.css" />
+    <link rel="stylesheet" href="css/scan-history.css" />
+    <link rel="stylesheet" href="css/responsive.css" />
+  </head>
+  <body class="dashboard-page">
+    <header class="dashboard-header">
+      <div class="header-left">
+        <a href="authenticated.html" class="logo">
+          <div class="logo-placeholder">
+            <img src="img/logo-placeholder.svg" alt="PhishR Logo" />
+          </div>
+          <span class="brand-name">PhishR</span>
+        </a>
+      </div>
+      <div class="header-right">
+        <div class="user-profile">
+          <div class="profile-dropdown">
+            <div class="profile-icon">
+              <img src="img/profile-icon.svg" alt="User Profile" />
+            </div>
+            <div class="dropdown-menu">
+              <ul>
+                <li class="dropdown-title">Account</li>
+                <li><a href="#profile-information">Profile Information</a></li>
+                <li><a href="#security">Security</a></li>
+                <li><a href="index.html">Logout</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <div class="dashboard-container">
+      <aside class="sidebar">
+        <div class="user-info">
+          <div class="plan-badge">FREE PLAN</div>
+          <div class="user-name">George Oviachi</div>
+          <button class="btn btn-small btn-outline upgrade-btn">UPGRADE</button>
+        </div>
+
+        <nav class="sidebar-nav">
+          <ul>
+            <li><a href="authenticated.html">Live Scan</a></li>
+            <li class="active"><a href="scan-history.html">All Scans</a></li>
+            <li>
+              <a href="#">Live Monitoring <span class="badge new-badge">NEW</span></a>
+            </li>
+            <li><a href="#">Features</a></li>
+          </ul>
+        </nav>
+      </aside>
+
+      <main class="dashboard-main">
+        <section class="history-section">
+          <div class="section-header">
+            <div class="section-title">
+              <h1>Scan URLs</h1>
+              <p class="section-description">A real-time URL scanner that provides detailed threat intelligence and flags potential brand impersonation.</p>
+            </div>
+          </div>
+
+          <div class="history-table-container">
+            <table class="history-table">
+              <thead>
+                <tr>
+                  <th>Source URL</th>
+                  <th>IP Address</th>
+                  <th>Hosting Provider</th>
+                  <th>Probability</th>
+                  <th>Detection Date</th>
+                  <th>Brand</th>
+                  <th>Source</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="history-item">
+                  <td class="url-column">
+                    <a href="#" class="url-link">https://www.swinburne.edu.au/</a>
+                  </td>
+                  <td>13.107.253.70</td>
+                  <td>Microsoft Corporation</td>
+                  <td><span class="probability-legitimate">Legitimate</span></td>
+                  <td>12-Apr-2025</td>
+                  <td>Unknown</td>
+                  <td>Bulk Scan</td>
+                </tr>
+
+                <tr class="history-item">
+                  <td class="url-column">
+                    <a href="#" class="url-link">https://qr1.be/0NSB</a>
+                  </td>
+                  <td>159.89.52.226</td>
+                  <td>DigitalOcean, LLC</td>
+                  <td><span class="disposition-clean">Clean</span></td>
+                  <td>12-Apr-2025</td>
+                  <td>Unknown</td>
+                  <td>Bulk Scan</td>
+                </tr>
+
+                <tr class="history-item">
+                  <td class="url-column">
+                    <a href="#" class="url-link">https://exodus.wallet-reset.com/</a>
+                  </td>
+                  <td>172.67.188.20</td>
+                  <td>Cloudflare, Inc.</td>
+                  <td><span class="disposition-clean">Clean</span></td>
+                  <td>12-Apr-2025</td>
+                  <td>Unknown</td>
+                  <td>Bulk Scan</td>
+                </tr>
+
+                <tr class="history-item">
+                  <td class="url-column">
+                    <a href="#" class="url-link">https://exodus.wallet-reset.com/</a>
+                  </td>
+                  <td>104.21.7.231</td>
+                  <td>Cloudflare, Inc.</td>
+                  <td><span class="disposition-clean">Clean</span></td>
+                  <td>12-Apr-2025</td>
+                  <td>Unknown</td>
+                  <td>Bulk Scan</td>
+                </tr>
+
+                <tr class="history-item">
+                  <td class="url-column">
+                    <a href="#" class="url-link">https://exodus.wallet-reset.com/</a>
+                  </td>
+                  <td>104.21.7.231</td>
+                  <td>Cloudflare, Inc.</td>
+                  <td><span class="disposition-clean">Clean</span></td>
+                  <td>12-Apr-2025</td>
+                  <td>Unknown</td>
+                  <td>Bulk Scan</td>
+                </tr>
+
+                <tr class="history-item">
+                  <td class="url-column">
+                    <a href="#" class="url-link">https://qr1.be/0NSB</a>
+                  </td>
+                  <td>159.89.52.226</td>
+                  <td>DigitalOcean, LLC</td>
+                  <td><span class="disposition-clean">Clean</span></td>
+                  <td>12-Apr-2025</td>
+                  <td>Unknown</td>
+                  <td>Bulk Scan</td>
+                </tr>
+
+                <tr class="history-item">
+                  <td class="url-column">
+                    <a href="#" class="url-link">https://tussateenlinca.com/</a>
+                  </td>
+                  <td>--</td>
+                  <td>--</td>
+                  <td><span class="disposition-clean">Clean</span></td>
+                  <td>12-Apr-2025</td>
+                  <td>Unknown</td>
+                  <td>Bulk Scan</td>
+                </tr>
+
+                <tr class="history-item">
+                  <td class="url-column">
+                    <a href="#" class="url-link">https://exodus.wallet-reset.com/</a>
+                  </td>
+                  <td>172.67.188.20</td>
+                  <td>Cloudflare, Inc.</td>
+                  <td><span class="disposition-clean">Clean</span></td>
+                  <td>12-Apr-2025</td>
+                  <td>Unknown</td>
+                  <td>Bulk Scan</td>
+                </tr>
+
+                <tr class="history-item">
+                  <td class="url-column">
+                    <a href="#" class="url-link">https://serviciosparadigitalweb.site/</a>
+                  </td>
+                  <td>203.161.48.242</td>
+                  <td>--</td>
+                  <td><span class="disposition-clean">Clean</span></td>
+                  <td>12-Apr-2025</td>
+                  <td>Unknown</td>
+                  <td>Bulk Scan</td>
+                </tr>
+
+                <tr class="history-item">
+                  <td class="url-column">
+                    <a href="#" class="url-link">https://serviciosparadigitalweb.site/</a>
+                  </td>
+                  <td>203.161.48.242</td>
+                  <td>--</td>
+                  <td><span class="disposition-clean">Clean</span></td>
+                  <td>12-Apr-2025</td>
+                  <td>Unknown</td>
+                  <td>Bulk Scan</td>
+                </tr>
+
+                <tr class="history-item">
+                  <td class="url-column">
+                    <a href="#" class="url-link">https://aabfi.encodomkgm/</a>
+                  </td>
+                  <td>172.67.149.123</td>
+                  <td>Cloudflare, Inc.</td>
+                  <td><span class="disposition-clean">Clean</span></td>
+                  <td>12-Apr-2025</td>
+                  <td>Unknown</td>
+                  <td>Bulk Scan</td>
+                </tr>
+
+                <tr class="history-item">
+                  <td class="url-column">
+                    <a href="#" class="url-link">https://sittugdateinfo1683.weebly.co...</a>
+                  </td>
+                  <td>74.115.51.8</td>
+                  <td>--</td>
+                  <td><span class="disposition-clean">Clean</span></td>
+                  <td>12-Apr-2025</td>
+                  <td>Unknown</td>
+                  <td>Bulk Scan</td>
+                </tr>
+
+                <tr class="history-item">
+                  <td class="url-column">
+                    <a href="#" class="url-link">https://imaseon.com/</a>
+                  </td>
+                  <td>64.190.63.222</td>
+                  <td>SEDO GmbH</td>
+                  <td><span class="disposition-clean">Clean</span></td>
+                  <td>12-Apr-2025</td>
+                  <td>Unknown</td>
+                  <td>Bulk Scan</td>
+                </tr>
+
+                <tr class="history-item">
+                  <td class="url-column">
+                    <a href="#" class="url-link">https://inseo.co.jp/</a>
+                  </td>
+                  <td>104.21.18.1</td>
+                  <td>Cloudflare, Inc.</td>
+                  <td><span class="disposition-clean">Clean</span></td>
+                  <td>12-Apr-2025</td>
+                  <td>Unknown</td>
+                  <td>Bulk Scan</td>
+                </tr>
+
+                <tr class="history-item">
+                  <td class="url-column">
+                    <a href="#" class="url-link">https://multichain-syncs.pages.dev/</a>
+                  </td>
+                  <td>172.66.47.9</td>
+                  <td>--</td>
+                  <td><span class="disposition-clean">Clean</span></td>
+                  <td>12-Apr-2025</td>
+                  <td>Unknown</td>
+                  <td>Bulk Scan</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="pagination">
+            <div class="pagination-info">
+              <span>Showing 1 - 15 of 17</span>
+            </div>
+            <div class="pagination-controls">
+              <button class="pagination-btn prev-btn" disabled>
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M10 12L6 8L10 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+              </button>
+              <div class="pagination-pages">
+                <span class="current-page">1</span>
+                <span>of 2</span>
+              </div>
+              <button class="pagination-btn next-btn">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M6 12L10 8L6 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <div class="help-center">
+        <div class="help-header">
+          <h3>Help center</h3>
+          <button class="close-help">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 4L4 12M4 4L12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </button>
+        </div>
+
+        <div class="help-menu">
+          <div class="help-item">
+            <div class="help-item-header">
+              <span>Announcements</span>
+              <svg class="chevron-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M6 12L10 8L6 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </div>
+          </div>
+
+          <div class="help-item">
+            <div class="help-item-header">
+              <span>Technical Support</span>
+              <svg class="chevron-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M6 12L10 8L6 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </div>
+          </div>
+
+          <div class="help-item">
+            <div class="help-item-header">
+              <span>FAQ</span>
+              <svg class="chevron-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M6 12L10 8L6 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="js/scan-history.js" defer></script>
+  </body>
+</html>

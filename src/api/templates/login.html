@@ -3,61 +3,140 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Login - PhishR</title>
-    <link rel="stylesheet" href="/static/css/styles.css" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css" />
+    <title>Login - PhishR - Phishing Detection with Machine Learning</title>
+    <meta name="description" content="Log in to your PhishR account to access advanced phishing detection features." />
+    <link rel="stylesheet" href="css/normalize.css" />
+    <link rel="stylesheet" href="css/styles.css" />
+    <link rel="stylesheet" href="css/responsive.css" />
   </head>
   <body>
-    <div class="auth-page">
-      <div class="auth-card">
-        <div class="auth-header">
-          <div class="auth-logo">
-            <i class="fa-solid fa-shield-halved"></i>
-            PhishR
-          </div>
-          <p>Sign in to your account</p>
+    <div class="container">
+      <header class="site-header">
+        <div class="logo-container">
+          <a href="index.html" class="logo">
+            <!-- Logo placeholder - replace with actual logo -->
+            <div class="logo-placeholder">
+              <img src="img/logo-placeholder.svg" alt="PhishR Logo" />
+            </div>
+            <span class="brand-name">PhishR</span>
+          </a>
         </div>
-
-        <div class="auth-body">
-          {% if error %}
-          <div class="alert alert-danger">
-            <i class="fa-solid fa-circle-exclamation"></i>
-            {{ error }}
+        <nav class="main-nav">
+          <ul class="nav-links">
+            <li><a href="#features">FEAUTURES</a></li>
+            <li><a href="#support">SUPPORT</a></li>
+          </ul>
+          <div class="auth-buttons">
+            <a href="login.html" class="btn btn-outline">Log In</a>
+            <a href="register.html" class="btn btn-primary">Register</a>
           </div>
-          {% endif %} {% if message %}
-          <div class="alert alert-success">
-            <i class="fa-solid fa-circle-check"></i>
-            {{ message }}
-          </div>
-          {% endif %}
+        </nav>
+      </header>
 
-          <form action="/login" method="post" class="auth-form">
-            <div class="form-group">
-              <label for="username">Username</label>
-              <div class="input-group">
-                <input type="text" id="username" name="username" placeholder="Enter your username" required />
-              </div>
+      <main>
+        <section class="auth-section">
+          <div class="auth-container">
+            <div class="auth-header">
+              <h1>Log In to PhishR</h1>
+              <p class="auth-subtitle">Access your phishing detection dashboard</p>
             </div>
 
-            <div class="form-group">
-              <label for="password">Password</label>
-              <div class="input-group">
-                <input type="password" id="password" name="password" placeholder="Enter your password" required />
+            <form id="login-form" class="auth-form">
+              <div class="form-group">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" name="email" placeholder="Your email address" required />
               </div>
+
+              <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" placeholder="Your password" required />
+              </div>
+
+              <div class="form-group checkbox-group">
+                <input type="checkbox" id="remember" name="remember" />
+                <label for="remember">Remember me</label>
+                <a href="/forgot-password" class="forgot-password">Forgot Password?</a>
+              </div>
+
+              <button type="submit" class="btn btn-primary btn-block">Log In</button>
+            </form>
+
+            <div class="auth-footer">
+              <p>Don't have an account? <a href="register.html">Register</a></p>
             </div>
+          </div>
 
-            <button type="submit" class="btn btn-primary btn-block">
-              <i class="fa-solid fa-right-to-bracket"></i>
-              Sign in
-            </button>
-          </form>
+          <div class="auth-image">
+            <img src="img/phishing-illustration.svg" alt="Phishing detection illustration" />
+            <div class="auth-image-caption">
+              <h2>State-of-the art phishing detection</h2>
+              <p>Your first line of defense against cyber threats</p>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer class="site-footer">
+        <div class="footer-content">
+          <div class="footer-links">
+            <div class="footer-column">
+              <h3>Mobile app</h3>
+              <p>(coming soon)</p>
+            </div>
+            <div class="footer-column">
+              <h3>Legal</h3>
+              <ul>
+                <li><a href="/terms">Terms and Conditions</a></li>
+                <li><a href="/privacy">Privacy</a></li>
+              </ul>
+            </div>
+            <div class="footer-column">
+              <h3>About us</h3>
+              <ul>
+                <li><a href="/about">Our story</a></li>
+                <li><a href="/team">Team</a></li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="footer-center">
+            <div class="footer-logo">
+              <img src="img/logo-placeholder.svg" alt="PhishR Logo" />
+              <span>PhishR</span>
+            </div>
+          </div>
+
+          <div class="footer-links">
+            <div class="footer-column">
+              <h3>Support</h3>
+              <ul>
+                <li><a href="/help">Help center</a></li>
+                <li><a href="/contact">Contact us</a></li>
+              </ul>
+            </div>
+            <div class="footer-column">
+              <h3>Blog</h3>
+              <ul>
+                <li><a href="/blog">Articles</a></li>
+                <li><a href="/updates">Updates</a></li>
+              </ul>
+            </div>
+            <div class="footer-column">
+              <h3>Resources</h3>
+              <ul>
+                <li><a href="/docs">Documentation</a></li>
+                <li><a href="/api">API</a></li>
+              </ul>
+            </div>
+          </div>
         </div>
 
-        <div class="auth-footer">
-          <p>Don't have an account? <a href="/register">Create an account</a></p>
-          <p><a href="/">Back to Home</a></p>
+        <div class="copyright">
+          <p>© PhishR, Inc. 2025. You're in good company</p>
         </div>
-      </div>
+      </footer>
     </div>
+
+    <script src="/src/api/static/js/login.js" defer></script>
   </body>
 </html>

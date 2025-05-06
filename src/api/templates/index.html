@@ -3,137 +3,131 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>PhishR - Phishing & Malware Detection</title>
-    <link rel="stylesheet" href="/static/css/styles.css" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css" />
+    <title>PhishR - Phishing Detection with Machine Learning</title>
+    <meta name="description" content="State-of-the art Phishing detection using Machine Learning for content based feature detection and improved prediction." />
+    <link rel="stylesheet" href="/src/api/static/css/normalize.css" />
+    <link rel="stylesheet" href="/src/api/static/css/styles.css" />
+    <link rel="stylesheet" href="/src/api/static/css/responsive.css" />
   </head>
   <body>
-    <div class="layout">
-      <!-- Sidebar -->
-      <aside class="sidebar">
-        <div class="sidebar-header">
-          <div class="app-name">
-            <i class="fa-solid fa-shield-halved"></i>
-            PhishR
+    <div class="container">
+      <header class="site-header">
+        <div class="logo-container">
+          <a href="/" class="logo">
+            <!-- Logo placeholder - replace with actual logo -->
+            <div class="logo-placeholder">
+              <img src="/src/api/static/img/logo-placeholder.svg" alt="PhishR Logo" />
+            </div>
+            <span class="brand-name">PhishR</span>
+          </a>
+        </div>
+        <nav class="main-nav">
+          <ul class="nav-links">
+            <li><a href="#features">FEAUTURES</a></li>
+            <li><a href="#support">SUPPORT</a></li>
+          </ul>
+          <div class="auth-buttons">
+            <a href="login.html" class="btn btn-outline">Log In</a>
+            <a href="register.html" class="btn btn-primary">Register</a>
+          </div>
+        </nav>
+      </header>
+
+      <main>
+        <section class="hero-section">
+          <div class="hero-content">
+            <h1>Phishing Detection with Machine Learning</h1>
+            <p class="hero-text">State-of-the art Phishing detection using Machine Learning for content based feature detection and improved prediction.</p>
+
+            <div class="scan-widget">
+              <form id="scan-form" class="scan-form">
+                <input type="url" id="url-input" placeholder="Enter URL to analyze" required />
+                <button type="submit" id="scan-button" class="btn btn-primary">Scan Now</button>
+              </form>
+
+              <div class="progress-container" style="display: none" id="progress-container">
+                <div class="progress-bar">
+                  <div class="progress-fill" id="scan-progress"></div>
+                </div>
+                <p class="progress-text" id="progress-status">Analyzing URL...</p>
+              </div>
+
+              <div class="scan-results" id="scan-results" style="display: none">
+                <h2 class="result-heading" id="result-heading">ANALYZING...</h2>
+                <div class="result-details" id="result-details">
+                  <!-- Results will be inserted here by JavaScript -->
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="hero-image">
+            <img src="/src/api/static/img/phishing-illustration.svg" alt="Phishing detection illustration showing a user safely browsing" />
+          </div>
+        </section>
+      </main>
+
+      <footer class="site-footer">
+        <div class="footer-content">
+          <div class="footer-links">
+            <div class="footer-column">
+              <h3>Mobile app</h3>
+              <p>(coming soon)</p>
+            </div>
+            <div class="footer-column">
+              <h3>Legal</h3>
+              <ul>
+                <li><a href="/terms">Terms and Conditions</a></li>
+                <li><a href="/privacy">Privacy</a></li>
+              </ul>
+            </div>
+            <div class="footer-column">
+              <h3>About us</h3>
+              <ul>
+                <li><a href="/about">Our story</a></li>
+                <li><a href="/team">Team</a></li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="footer-center">
+            <div class="footer-logo">
+              <img src="/src/api/static/img/logo-placeholder.svg" alt="PhishR Logo" />
+              <span>PhishR</span>
+            </div>
+          </div>
+
+          <div class="footer-links">
+            <div class="footer-column">
+              <h3>Support</h3>
+              <ul>
+                <li><a href="/help">Help center</a></li>
+                <li><a href="/contact">Contact us</a></li>
+              </ul>
+            </div>
+            <div class="footer-column">
+              <h3>Blog</h3>
+              <ul>
+                <li><a href="/blog">Articles</a></li>
+                <li><a href="/updates">Updates</a></li>
+              </ul>
+            </div>
+            <div class="footer-column">
+              <h3>Resources</h3>
+              <ul>
+                <li><a href="/docs">Documentation</a></li>
+                <li><a href="/api">API</a></li>
+              </ul>
+            </div>
           </div>
         </div>
-        <nav class="nav-links">
-          <a href="/" class="nav-item active">
-            <i class="fa-solid fa-house"></i>
-            Dashboard
-          </a>
-          <a href="/history" class="nav-item">
-            <i class="fa-solid fa-clock-rotate-left"></i>
-            History
-          </a>
-          <a href="/settings" class="nav-item">
-            <i class="fa-solid fa-gear"></i>
-            Settings
-          </a>
-          <a href="/about" class="nav-item">
-            <i class="fa-solid fa-circle-info"></i>
-            About
-          </a>
-        </nav>
-      </aside>
 
-      <!-- Main Content -->
-      <div class="main-content">
-        <!-- Top Navigation Bar -->
-        <header class="topbar">
-          <div class="breadcrumb">
-            <h3>URL Analysis</h3>
-          </div>
-          <div id="auth-section">
-            <!-- If not logged in -->
-            <div id="login-section" style="display: none">
-              <a href="/login" class="btn btn-primary btn-sm"> <i class="fa-solid fa-right-to-bracket"></i> Login </a>
-            </div>
-
-            <!-- If logged in -->
-            <div id="user-section" style="display: none">
-              <div class="user-dropdown" id="user-dropdown">
-                <div class="avatar" id="user-avatar">U</div>
-                <span id="username">User</span>
-                <i class="fa-solid fa-chevron-down"></i>
-              </div>
-            </div>
-          </div>
-        </header>
-
-        <!-- Main Content Area -->
-        <main class="content">
-          <div class="page-header">
-            <h1>URL Analysis</h1>
-            <p>Analyze URLs to detect phishing and malware distribution attempts</p>
-          </div>
-
-          <div class="card">
-            <div class="card-header">
-              <h2 class="card-title">URL Analyzer</h2>
-            </div>
-            <div class="card-body">
-              <!-- Tabs -->
-              <div class="tabs">
-                <div class="tab active" onclick="switchTab('single')">Single URL</div>
-                <div class="tab" onclick="switchTab('batch')">Batch URLs</div>
-              </div>
-
-              <!-- Single URL Tab -->
-              <div id="single-tab" class="tab-content active">
-                <div class="form-group">
-                  <label for="url-input">Enter URL to analyze:</label>
-                  <input type="url" id="url-input" placeholder="https://example.com" required />
-                </div>
-                <button class="btn btn-primary" onclick="analyzeSingleUrl()">
-                  <i class="fa-solid fa-magnifying-glass"></i>
-                  Analyze URL
-                  <span id="single-loader" class="loader"></span>
-                </button>
-              </div>
-
-              <!-- Batch URLs Tab -->
-              <div id="batch-tab" class="tab-content">
-                <div id="batch-auth-note" class="alert alert-info">
-                  <i class="fa-solid fa-circle-info"></i>
-                  You need to be logged in to use batch URL analysis.
-                  <a href="/login">Login now</a>
-                </div>
-
-                <div class="form-group">
-                  <label for="urls-input">Enter URLs to analyze (one per line):</label>
-                  <textarea id="urls-input" placeholder="https://example.com&#10;https://example.org" rows="6"></textarea>
-                </div>
-                <button id="batch-button" class="btn btn-primary" onclick="analyzeBatchUrls()" disabled>
-                  <i class="fa-solid fa-magnifying-glass"></i>
-                  Analyze URLs
-                  <span id="batch-loader" class="loader"></span>
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <!-- Results Section (initially hidden) -->
-          <div id="results" style="display: none">
-            <div class="results-header">
-              <h3>Analysis Results</h3>
-            </div>
-            <div id="results-container">
-              <!-- Results will be inserted here by JavaScript -->
-            </div>
-          </div>
-        </main>
-      </div>
+        <div class="copyright">
+          <p>© PhishR, Inc. 2025. You're in good company</p>
+        </div>
+      </footer>
     </div>
 
-    <!-- User dropdown menu -->
-    <div id="user-menu" class="dropdown-menu" style="display: none; position: absolute; right: 20px; top: 60px; background: white; border-radius: 4px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); width: 200px; z-index: 100">
-      <a href="/profile" class="dropdown-item"> <i class="fa-solid fa-user"></i> Profile </a>
-      <a href="/history" class="dropdown-item"> <i class="fa-solid fa-clock-rotate-left"></i> History </a>
-      <div class="dropdown-divider"></div>
-      <a href="/logout" class="dropdown-item"> <i class="fa-solid fa-sign-out-alt"></i> Logout </a>
-    </div>
-
-    <script src="/static/js/scripts.js"></script>
+    <!-- JavaScript will be added later -->
+    <script src="/src/api/static/js/main.js" defer></script>
   </body>
 </html>
