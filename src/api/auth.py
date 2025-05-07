@@ -57,6 +57,19 @@ def verify_password(plain_password, hashed_password):
 def get_password_hash(password):
     return pwd_context.hash(password)
 
+# User authentication
+def get_user(username: str):
+    """Get user from the database by username."""
+    if username in fake_users_db:
+        user_dict = fake_users_db[username]
+        return User(
+            username=username,
+            email=user_dict.get("email", ""),
+            full_name=user_dict.get("full_name", ""),
+            disabled=user_dict.get("disabled", False)
+        )
+    return None
+
 def get_user(db, username: str):
     if username in db:
         user_dict = db[username]

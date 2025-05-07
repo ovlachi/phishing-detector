@@ -167,8 +167,38 @@ async def logout():
 
 # Authenticated page
 @app.get("/authenticated.html", response_class=HTMLResponse)
-async def authenticated_page(request: Request, current_user: User = Depends(get_current_active_user)):
-    return templates.TemplateResponse("authenticated.html", {"request": request, "user": current_user})
+async def authenticated_page(request: Request):
+    # Get the token from the cookie
+    token = request.cookies.get("access_token")
+    
+    if not token:
+        # If no token is present, redirect to login
+        return RedirectResponse(url="/login", status_code=302)
+    
+    try:
+        # Try to extract the user from the token
+        token_type, access_token = token.split()
+        user = None
+        
+        # Extract username from token and get user
+        from jose import jwt
+        from src.api.auth import SECRET_KEY, ALGORITHM, get_user
+        
+        payload = jwt.decode(access_token, SECRET_KEY, algorithms=[ALGORITHM])
+        username = payload.get("sub")
+        if username:
+            user = get_user(username)
+        
+        if not user:
+            raise Exception("Invalid user")
+        
+        # Render the template with the user
+        return templates.TemplateResponse("authenticated.html", {"request": request, "user": user})
+    
+    except Exception as e:
+        # If token validation fails, redirect to login
+        print(f"Authentication error: {str(e)}")
+        return RedirectResponse(url="/login", status_code=302)
 
 # Authentication status endpoint
 @app.get("/auth-status")
