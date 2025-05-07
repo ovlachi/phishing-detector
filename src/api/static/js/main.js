@@ -99,14 +99,14 @@ document.addEventListener("DOMContentLoaded", () => {
       resultClass = "safe";
       resultIcon = "✅";
       resultMessage = "This URL appears to be legitimate";
-    } else if (className === "phishing") {
+    } else if (className === "credential phishing") {
       resultClass = "dangerous";
       resultIcon = "⚠️";
-      resultMessage = "Warning: This URL may be a phishing attempt";
-    } else if (className === "malware") {
+      resultMessage = "Warning: This URL may be a credential phishing attempt";
+    } else if (className === "malware distribution") {
       resultClass = "dangerous";
       resultIcon = "🛑";
-      resultMessage = "Danger: This URL may contain malware";
+      resultMessage = "Danger: This URL may contain drive-by-download malware distribution";
     }
 
     // Add class to card
