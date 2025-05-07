@@ -99,6 +99,7 @@ async def register_page(request: Request):
     return templates.TemplateResponse("register.html", {"request": request})
 
 # Login form submission
+# Login form submission
 @app.post("/login")
 async def login(request: Request, username: str = Form(...), password: str = Form(...)):
     user = authenticate_user(fake_users_db, username, password)
@@ -113,9 +114,13 @@ async def login(request: Request, username: str = Form(...), password: str = For
         data={"sub": user.username}, expires_delta=access_token_expires
     )
     
-    # Change redirect from "/" to "/authenticated.html"
-    response = RedirectResponse(url="/authenticated.html", status_code=303)
-    # Modified cookie settings for JavaScript access
+    # Instead of redirecting to authenticated.html, render it directly
+    response = templates.TemplateResponse(
+        "authenticated.html",
+        {"request": request, "user": user}
+    )
+    
+    # Set the token cookie on the response
     response.set_cookie(
         key="access_token",
         value=f"Bearer {access_token}",
@@ -124,6 +129,7 @@ async def login(request: Request, username: str = Form(...), password: str = For
         expires=1800,
         samesite="lax"
     )
+    
     return response
 
 # Register form submission
@@ -176,27 +182,32 @@ async def authenticated_page(request: Request):
         return RedirectResponse(url="/login", status_code=302)
     
     try:
-        # Try to extract the user from the token
+        # Extract token and get user
         token_type, access_token = token.split()
-        user = None
         
-        # Extract username from token and get user
-        from jose import jwt
-        from src.api.auth import SECRET_KEY, ALGORITHM, get_user
+        # Validate token and get username
+        from jose import jwt, JWTError
+        from src.api.auth import SECRET_KEY, ALGORITHM, fake_users_db, User
         
         payload = jwt.decode(access_token, SECRET_KEY, algorithms=[ALGORITHM])
         username = payload.get("sub")
-        if username:
-            user = get_user(username)
         
-        if not user:
-            raise Exception("Invalid user")
+        if not username or username not in fake_users_db:
+            raise JWTError("Invalid token")
+            
+        # Get user from database
+        user_dict = fake_users_db[username]
+        user = User(
+            username=username,
+            email=user_dict.get("email", ""),
+            full_name=user_dict.get("full_name", ""),
+            disabled=user_dict.get("disabled", False)
+        )
         
-        # Render the template with the user
+        # Render template with user data
         return templates.TemplateResponse("authenticated.html", {"request": request, "user": user})
-    
+        
     except Exception as e:
-        # If token validation fails, redirect to login
         print(f"Authentication error: {str(e)}")
         return RedirectResponse(url="/login", status_code=302)
 
