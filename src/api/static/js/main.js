@@ -1,10 +1,3 @@
-/**
- * PhishR - Main JavaScript file
- * This file provides basic UI interaction for demonstration purposes.
- * Further functionality would be implemented as needed.
- */
-
-// Wait for DOM to be fully loaded
 // Wait for DOM to be fully loaded
 document.addEventListener("DOMContentLoaded", () => {
   // Get elements from the DOM
@@ -94,20 +87,23 @@ document.addEventListener("DOMContentLoaded", () => {
     const resultCard = document.createElement("div");
     resultCard.className = "result-card";
 
-    // Determine result styling based on class
+    // Determine result styling based on class - CASE INSENSITIVE COMPARISON
     let resultClass = "neutral";
     let resultIcon = "❓";
     let resultMessage = "Unknown";
 
-    if (data.class_name === "legitimate") {
+    // Convert to lowercase for case-insensitive comparison
+    const className = data.class_name ? data.class_name.toLowerCase() : "";
+
+    if (className === "legitimate") {
       resultClass = "safe";
       resultIcon = "✅";
       resultMessage = "This URL appears to be legitimate";
-    } else if (data.class_name === "phishing") {
+    } else if (className === "phishing") {
       resultClass = "dangerous";
       resultIcon = "⚠️";
       resultMessage = "Warning: This URL may be a phishing attempt";
-    } else if (data.class_name === "malware") {
+    } else if (className === "malware") {
       resultClass = "dangerous";
       resultIcon = "🛑";
       resultMessage = "Danger: This URL may contain malware";
