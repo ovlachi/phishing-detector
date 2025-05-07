@@ -3,245 +3,276 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Dashboard - PhishR - Phishing Detection with Machine Learning</title>
-    <meta name="description" content="PhishR dashboard for scanning and monitoring URLs for phishing attempts." />
-    <link rel="stylesheet" href="css/normalize.css" />
-    <link rel="stylesheet" href="css/styles.css" />
-    <link rel="stylesheet" href="css/dashboard.css" />
-    <link rel="stylesheet" href="css/responsive.css" />
+    <title>Dashboard - Phishing Detector</title>
+    <link rel="stylesheet" href="/src/api/static/css/normalize.css" />
+    <link rel="stylesheet" href="/src/api/static/css/styles.css" />
+    <link rel="stylesheet" href="/src/api/static/css/responsive.css" />
   </head>
-  <body class="dashboard-page">
-    <header class="dashboard-header">
-      <div class="header-left">
-        <a href="authenticated.html" class="logo">
-          <div class="logo-placeholder">
-            <img src="img/logo-placeholder.svg" alt="PhishR Logo" />
+  <body>
+    <header class="header">
+      <div class="container">
+        <div class="header-content">
+          <div class="logo">
+            <a href="/">
+              <img src="/src/api/static/img/logo-placeholder.svg" alt="PhishR Logo" />
+              <span>PhishR</span>
+            </a>
           </div>
-          <span class="brand-name">PhishR</span>
-        </a>
-      </div>
-      <div class="header-right">
-        <div class="user-profile">
-          <div class="profile-dropdown">
-            <div class="profile-icon">
-              <img src="img/profile-icon.svg" alt="User Profile" />
-            </div>
-            <div class="dropdown-menu">
-              <ul>
-                <li class="dropdown-title">Account</li>
-                <li><a href="#profile-information">Profile Information</a></li>
-                <li><a href="#security">Security</a></li>
-                <li><a href="index.html">Logout</a></li>
-              </ul>
-            </div>
-          </div>
+          <nav class="nav">
+            <ul class="nav-list">
+              <li><a href="/" class="nav-link">Home</a></li>
+              <li><a href="/authenticated.html" class="nav-link active">Dashboard</a></li>
+              <li><a href="/logout" class="nav-link btn btn-outline">Log Out</a></li>
+            </ul>
+          </nav>
         </div>
       </div>
     </header>
 
-    <div class="dashboard-container">
-      <aside class="sidebar">
-        <div class="user-info">
-          <div class="plan-badge">FREE PLAN</div>
-          <div class="user-name">George Oviachi</div>
-          <button class="btn btn-small btn-outline upgrade-btn">UPGRADE</button>
+    <main>
+      <section class="hero">
+        <div class="container">
+          <div class="hero-content">
+            <h1>Welcome, {{ user.full_name }}!</h1>
+            <p>You are now logged in to your secure dashboard.</p>
+          </div>
         </div>
+      </section>
 
-        <nav class="sidebar-nav">
-          <ul>
-            <li class="active"><a href="authenticated.html">Live Scan</a></li>
-            <li><a href="scan-history.html">All Scans</a></li>
-            <li>
-              <a href="#">Live Monitoring <span class="badge new-badge">NEW</span></a>
-            </li>
-            <li><a href="#">Features</a></li>
-          </ul>
-        </nav>
-      </aside>
+      <section class="features">
+        <div class="container">
+          <h2>User Dashboard</h2>
 
-      <main class="dashboard-main">
-        <section class="scan-section">
-          <h1>Scan URLs</h1>
-          <p class="section-description">A real-time URL scanner that provides detailed threat intelligence and flags potential brand impersonation.</p>
+          <div class="feature-grid authenticated-dashboard">
+            <!-- Single URL Scanner -->
+            <div class="feature-card">
+              <h3>URL Scanner</h3>
+              <p>Scan any URL to check if it's legitimate or potentially dangerous.</p>
+              <form id="scan-form" class="scan-form">
+                <input type="url" id="url-input" name="url" placeholder="Enter a URL to scan..." required />
+                <button type="submit" id="scan-button" class="btn btn-primary">Scan Now</button>
+              </form>
+            </div>
 
-          <div class="scan-steps">
-            <div class="step-item">
-              <div class="step-number">1.</div>
-              <div class="step-content">
-                <div class="dropdown model-dropdown">
-                  <button class="dropdown-toggle">
-                    <span>Selected Model</span>
-                    <svg class="dropdown-arrow" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M4 6L8 10L12 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                    </svg>
-                  </button>
-                  <div class="dropdown-content">
-                    <div class="dropdown-item selected">Ensemble Model</div>
-                    <div class="dropdown-item">XGBoost</div>
-                    <div class="dropdown-item">Random Forest</div>
-                    <div class="dropdown-item">Gradient Boosting</div>
+            <!-- Batch URL Scanner -->
+            <div class="feature-card">
+              <h3>Batch URL Scanning</h3>
+              <p>Enter up to 10 URLs to scan them all at once, or upload a CSV file.</p>
+
+              <!-- Batch URL Input Form -->
+              <form id="batch-scan-form" class="batch-scan-form">
+                <div class="url-inputs">
+                  <div class="url-input-container">
+                    <label>1. Please enter a new URL on each line (Limit 0/10)</label>
+                    <textarea id="batch-url-input" rows="10" placeholder="Enter URLs (one per line)" class="batch-url-textarea"></textarea>
                   </div>
                 </div>
+                <div class="form-controls">
+                  <button type="submit" id="batch-scan-button" class="btn btn-primary">SCAN</button>
+                </div>
+              </form>
+
+              <!-- CSV Upload Option -->
+              <div class="csv-upload">
+                <p>Or upload a CSV file with URLs (one URL per row)</p>
+                <form id="csv-upload-form">
+                  <input type="file" id="csv-file-input" accept=".csv" />
+                  <button type="submit" class="btn btn-secondary">Upload & Scan</button>
+                </form>
               </div>
             </div>
 
-            <div class="step-item">
-              <div class="step-number">2.</div>
-              <div class="step-content">
-                <div class="url-input-container">
-                  <label for="url-input">Please enter a new URL on each line (Limit 0/10)</label>
-                  <div class="url-input-wrapper">
-                    <input type="url" id="url-input" placeholder="https://qr1.be/0NSB" value="https://qr1.be/0NSB" />
-                    <button class="btn btn-primary scan-button">SCAN</button>
-                  </div>
-                </div>
+            <!-- Scan History -->
+            <div class="feature-card">
+              <h3>Scan History</h3>
+              <p>View your recent URL scans and their results.</p>
+
+              <div class="scan-history-table-container">
+                <table class="scan-history-table">
+                  <thead>
+                    <tr>
+                      <th>Source URL</th>
+                      <th>IP Address</th>
+                      <th>Hosting Provider</th>
+                      <th>Disposition</th>
+                      <th class="sortable">Detection Date <span class="sort-icon">▼</span></th>
+                      <th>Brand</th>
+                      <th>Source</th>
+                    </tr>
+                  </thead>
+                  <tbody id="scan-history-body">
+                    <!-- History entries will be populated here -->
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>
+        </div>
+      </section>
 
-          <div class="scan-results">
-            <div class="progress-container">
-              <div class="progress-bar">
-                <div class="progress-fill" style="width: 100%"></div>
-              </div>
-              <p class="progress-text">100% Detection Finished...</p>
-            </div>
+      <!-- Results section for displaying single scan results -->
+      <section id="results-section" class="results-section">
+        <div class="container">
+          <h2>Scan Results</h2>
+          <div id="loading-spinner" class="loading-spinner">
+            <div class="spinner"></div>
+            <p>Analyzing URL...</p>
+          </div>
+          <div id="results-container" class="results-container">
+            <!-- Results will be displayed here dynamically -->
+          </div>
+        </div>
+      </section>
 
-            <div class="result-header">
-              <div class="result-title">
-                <h2 class="result-heading phishing-detected">RESULT: Credential Phishing DETECTED!</h2>
-                <div class="result-metrics">
-                  <div class="metric-item">ACCURACY: <span class="metric-value">97%...</span></div>
-                  <div class="metric-item">PRECISION: <span class="metric-value">97%...</span></div>
-                  <div class="metric-item">RECALL: <span class="metric-value">97%...</span></div>
-                </div>
-              </div>
-              <div class="result-actions">
-                <button class="btn btn-small btn-outline rescan-btn">Rescan</button>
-              </div>
-            </div>
+      <!-- The batch results section will be added dynamically via JavaScript -->
+    </main>
 
-            <div class="scan-details">
-              <div class="scan-info">
-                <p>Scanned on 04-12-2025, 12:29 PM from <span class="flag-icon">🇺🇸</span> US using <span class="model-type">Auto</span></p>
-              </div>
-
-              <div class="result-data">
-                <div class="result-preview">
-                  <img src="img/scan-preview.svg" alt="Website preview" />
-                </div>
-
-                <div class="result-details">
-                  <div class="detail-row">
-                    <div class="detail-label">Source URL:</div>
-                    <div class="detail-value">
-                      <a href="#" class="url-link">https://qr1.be/...</a>
-                      <button class="copy-btn" title="Copy URL">
-                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M4 4H2V14H12V12M12 2H6V12H12V2Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-                        </svg>
-                      </button>
+    <footer class="footer">
+      <div class="container">
+        <p>
+          &copy; 2025 <!DOCTYPE html>
+          <html lang="en">
+            <head>
+              <meta charset="UTF-8" />
+              <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+              <title>Dashboard - Phishing Detector</title>
+              <link rel="stylesheet" href="/src/api/static/css/normalize.css" />
+              <link rel="stylesheet" href="/src/api/static/css/styles.css" />
+              <link rel="stylesheet" href="/src/api/static/css/responsive.css" />
+            </head>
+            <body>
+              <header class="header">
+                <div class="container">
+                  <div class="header-content">
+                    <div class="logo">
+                      <a href="/">
+                        <img src="/src/api/static/img/logo-placeholder.svg" alt="PhishR Logo" />
+                        <span>PhishR</span>
+                      </a>
                     </div>
-                    <div class="detail-tag phishing-tag">Credential Phishing</div>
+                    <nav class="nav">
+                      <ul class="nav-list">
+                        <li><a href="/" class="nav-link">Home</a></li>
+                        <li><a href="/authenticated.html" class="nav-link active">Dashboard</a></li>
+                        <li><a href="/logout" class="nav-link btn btn-outline">Log Out</a></li>
+                      </ul>
+                    </nav>
                   </div>
+                </div>
+              </header>
 
-                  <div class="detail-row">
-                    <div class="detail-label">IP Address:</div>
-                    <div class="detail-value">
-                      <a href="#" class="ip-link">159.89.52.226</a>
+              <main>
+                <section class="hero">
+                  <div class="container">
+                    <div class="hero-content">
+                      <h1>Welcome, {{ user.full_name }}!</h1>
+                      <p>You are now logged in to your secure dashboard.</p>
                     </div>
-                    <div class="detail-tag brand-tag">Brand:</div>
-                    <div class="detail-value">Unknown</div>
                   </div>
+                </section>
 
-                  <div class="detail-row">
-                    <div class="detail-label">Hosting Provider:</div>
-                    <div class="detail-value">DigitalOcean, LLC</div>
-                    <div class="detail-tag category-tag">Category:</div>
-                    <div class="detail-value">Error Pages</div>
+                <section class="features">
+                  <div class="container">
+                    <h2>User Dashboard</h2>
+
+                    <div class="feature-grid authenticated-dashboard">
+                      <!-- Single URL Scanner -->
+                      <div class="feature-card">
+                        <h3>URL Scanner</h3>
+                        <p>Scan any URL to check if it's legitimate or potentially dangerous.</p>
+                        <form id="scan-form" class="scan-form">
+                          <input type="url" id="url-input" name="url" placeholder="Enter a URL to scan..." required />
+                          <button type="submit" id="scan-button" class="btn btn-primary">Scan Now</button>
+                        </form>
+                      </div>
+
+                      <!-- Batch URL Scanner -->
+                      <div class="feature-card">
+                        <h3>Batch URL Scanning</h3>
+                        <p>Enter up to 10 URLs to scan them all at once, or upload a CSV file.</p>
+
+                        <!-- Batch URL Input Form -->
+                        <form id="batch-scan-form" class="batch-scan-form">
+                          <div class="url-inputs">
+                            <div class="url-input-container">
+                              <label>1. Please enter a new URL on each line (Limit 0/10)</label>
+                              <textarea id="batch-url-input" rows="10" placeholder="Enter URLs (one per line)" class="batch-url-textarea"></textarea>
+                            </div>
+                          </div>
+                          <div class="form-controls">
+                            <button type="submit" id="batch-scan-button" class="btn btn-primary">SCAN</button>
+                          </div>
+                        </form>
+
+                        <!-- CSV Upload Option -->
+                        <div class="csv-upload">
+                          <p>Or upload a CSV file with URLs (one URL per row)</p>
+                          <form id="csv-upload-form">
+                            <input type="file" id="csv-file-input" accept=".csv" />
+                            <button type="submit" class="btn btn-secondary">Upload & Scan</button>
+                          </form>
+                        </div>
+                      </div>
+
+                      <!-- Scan History -->
+                      <div class="feature-card">
+                        <h3>Scan History</h3>
+                        <p>View your recent URL scans and their results.</p>
+
+                        <div class="scan-history-table-container">
+                          <table class="scan-history-table">
+                            <thead>
+                              <tr>
+                                <th>Source URL</th>
+                                <th>IP Address</th>
+                                <th>Hosting Provider</th>
+                                <th>Disposition</th>
+                                <th class="sortable">Detection Date <span class="sort-icon">▼</span></th>
+                                <th>Brand</th>
+                                <th>Source</th>
+                              </tr>
+                            </thead>
+                            <tbody id="scan-history-body">
+                              <!-- History entries will be populated here -->
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </div>
                   </div>
+                </section>
+
+                <!-- Results section for displaying single scan results -->
+                <section id="results-section" class="results-section">
+                  <div class="container">
+                    <h2>Scan Results</h2>
+                    <div id="loading-spinner" class="loading-spinner">
+                      <div class="spinner"></div>
+                      <p>Analyzing URL...</p>
+                    </div>
+                    <div id="results-container" class="results-container">
+                      <!-- Results will be displayed here dynamically -->
+                    </div>
+                  </div>
+                </section>
+
+                <!-- The batch results section will be added dynamically via JavaScript -->
+              </main>
+
+              <footer class="footer">
+                <div class="container">
+                  <p>&copy; 2025 PhishR. All rights reserved.</p>
                 </div>
-              </div>
+              </footer>
 
-              <div class="additional-details">
-                <div class="detail-column">
-                  <div class="detail-item">
-                    <div class="detail-label">Scan Location:</div>
-                    <div class="detail-value"><span class="flag-icon">🇺🇸</span> US</div>
-                  </div>
-                  <div class="detail-item">
-                    <div class="detail-label">Logo Detected:</div>
-                    <div class="detail-value">false</div>
-                  </div>
-                </div>
-
-                <div class="detail-column">
-                  <div class="detail-item">
-                    <div class="detail-label">Timeout:</div>
-                    <div class="detail-value">Auto</div>
-                  </div>
-                </div>
-
-                <div class="detail-column">
-                  <div class="detail-item">
-                    <div class="detail-label">Last scanned:</div>
-                    <div class="detail-value">12-Apr-2025</div>
-                  </div>
-                </div>
-
-                <div class="detail-column">
-                  <div class="detail-item">
-                    <div class="detail-label">First seen:</div>
-                    <div class="detail-value">12-Apr-2025</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-      </main>
-
-      <div class="help-center">
-        <div class="help-header">
-          <h3>Help center</h3>
-          <button class="close-help">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 4L4 12M4 4L12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-            </svg>
-          </button>
-        </div>
-
-        <div class="help-menu">
-          <div class="help-item">
-            <div class="help-item-header">
-              <span>Announcements</span>
-              <svg class="chevron-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M6 12L10 8L6 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-              </svg>
-            </div>
-          </div>
-
-          <div class="help-item">
-            <div class="help-item-header">
-              <span>Technical Support</span>
-              <svg class="chevron-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M6 12L10 8L6 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-              </svg>
-            </div>
-          </div>
-
-          <div class="help-item">
-            <div class="help-item-header">
-              <span>FAQ</span>
-              <svg class="chevron-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M6 12L10 8L6 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-              </svg>
-            </div>
-          </div>
-        </div>
+              <script src="/src/api/static/js/main.js"></script>
+            </body>
+          </html>
+          . All rights reserved.
+        </p>
       </div>
-    </div>
+    </footer>
 
-    <script src="js/dashboard.js" defer></script>
+    <script src="/src/api/static/js/main.js"></script>
   </body>
 </html>

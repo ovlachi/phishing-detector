@@ -113,7 +113,8 @@ async def login(request: Request, username: str = Form(...), password: str = For
         data={"sub": user.username}, expires_delta=access_token_expires
     )
     
-    response = RedirectResponse(url="/", status_code=303)
+    # Change redirect from "/" to "/authenticated.html"
+    response = RedirectResponse(url="/authenticated.html", status_code=303)
     # Modified cookie settings for JavaScript access
     response.set_cookie(
         key="access_token",
@@ -163,6 +164,11 @@ async def logout():
     response = RedirectResponse(url="/", status_code=303)
     response.delete_cookie(key="access_token")
     return response
+
+# Authenticated page
+@app.get("/authenticated.html", response_class=HTMLResponse)
+async def authenticated_page(request: Request, current_user: User = Depends(get_current_active_user)):
+    return templates.TemplateResponse("authenticated.html", {"request": request, "user": current_user})
 
 # Authentication status endpoint
 @app.get("/auth-status")
