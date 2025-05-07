@@ -5,71 +5,175 @@
  */
 
 // Wait for DOM to be fully loaded
-document.addEventListener("DOMContentLoaded", function () {
-  // Get form elements
+// Wait for DOM to be fully loaded
+document.addEventListener("DOMContentLoaded", () => {
+  // Get elements from the DOM
   const scanForm = document.getElementById("scan-form");
   const urlInput = document.getElementById("url-input");
   const scanButton = document.getElementById("scan-button");
-  const scanProgress = document.getElementById("scan-progress");
-  const progressStatus = document.getElementById("progress-status");
+  const resultsSection = document.getElementById("results-section");
+  const resultsContainer = document.getElementById("results-container");
+  const loadingSpinner = document.getElementById("loading-spinner");
 
-  // Set initial state
-  scanButton.textContent = "SCAN NOW";
-  scanProgress.style.width = "100%";
+  // Hide results section initially
+  if (resultsSection) {
+    resultsSection.style.display = "none";
+  }
 
   // Handle form submission
-  scanForm.addEventListener("submit", function (event) {
-    event.preventDefault();
+  if (scanForm) {
+    scanForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
 
-    // Get URL input value
-    const url = urlInput.value.trim();
+      // Get URL from input
+      const url = urlInput.value.trim();
 
-    // Basic validation
-    if (!url) {
-      alert("Please enter a valid URL");
+      // Validate URL
+      if (!url) {
+        showError("Please enter a URL");
+        return;
+      }
+
+      try {
+        new URL(url); // This will throw an error if URL is invalid
+      } catch (err) {
+        showError("Please enter a valid URL (including http:// or https://)");
+        return;
+      }
+
+      // Show loading state
+      if (scanButton) scanButton.disabled = true;
+      if (loadingSpinner) loadingSpinner.style.display = "block";
+      if (resultsContainer) resultsContainer.innerHTML = "";
+
+      try {
+        // Call API to scan URL
+        const response = await fetch("/classify", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ url: url })
+        });
+
+        const data = await response.json();
+
+        // Display results
+        displayResults(data);
+      } catch (error) {
+        showError("An error occurred while scanning the URL");
+        console.error("Error scanning URL:", error);
+      } finally {
+        // Hide loading state
+        if (scanButton) scanButton.disabled = false;
+        if (loadingSpinner) loadingSpinner.style.display = "none";
+      }
+    });
+  }
+
+  // Function to display scan results
+  function displayResults(data) {
+    if (!resultsSection || !resultsContainer) return;
+
+    // Show results section
+    resultsSection.style.display = "block";
+
+    // Clear previous results
+    resultsContainer.innerHTML = "";
+
+    if (data.error) {
+      // Handle error
+      const errorElement = document.createElement("div");
+      errorElement.className = "result-error";
+      errorElement.textContent = `Error: ${data.error}`;
+      resultsContainer.appendChild(errorElement);
       return;
     }
 
-    // Simulate scan process
-    simulateScan();
-  });
+    // Create result card
+    const resultCard = document.createElement("div");
+    resultCard.className = "result-card";
 
-  // Simulate a scan process with progress updates
-  function simulateScan() {
-    // Reset UI
-    scanProgress.style.width = "0%";
-    progressStatus.textContent = "Initializing scan...";
-    scanButton.textContent = "LOADING...";
-    scanButton.disabled = true;
+    // Determine result styling based on class
+    let resultClass = "neutral";
+    let resultIcon = "❓";
+    let resultMessage = "Unknown";
 
-    // Simulate progress steps
-    const steps = [
-      { progress: 20, message: "20% Analyzing URL structure..." },
-      { progress: 40, message: "40% Checking for malicious patterns..." },
-      { progress: 60, message: "60% Validating content..." },
-      { progress: 80, message: "80% Applying ML model..." },
-      { progress: 100, message: "100% Detection Finished..." }
-    ];
+    if (data.class_name === "legitimate") {
+      resultClass = "safe";
+      resultIcon = "✅";
+      resultMessage = "This URL appears to be legitimate";
+    } else if (data.class_name === "phishing") {
+      resultClass = "dangerous";
+      resultIcon = "⚠️";
+      resultMessage = "Warning: This URL may be a phishing attempt";
+    } else if (data.class_name === "malware") {
+      resultClass = "dangerous";
+      resultIcon = "🛑";
+      resultMessage = "Danger: This URL may contain malware";
+    }
 
-    let currentStep = 0;
+    // Add class to card
+    resultCard.classList.add(resultClass);
 
-    // Start progress simulation
-    const progressInterval = setInterval(function () {
-      if (currentStep < steps.length) {
-        const step = steps[currentStep];
-        scanProgress.style.width = step.progress + "%";
-        progressStatus.textContent = step.message;
-        currentStep++;
-      } else {
-        // Scan completed
-        clearInterval(progressInterval);
+    // Create HTML for result
+    resultCard.innerHTML = `
+          <div class="result-header">
+              <span class="result-icon">${resultIcon}</span>
+              <h3 class="result-title">${resultMessage}</h3>
+          </div>
+          <div class="result-details">
+              <p class="result-url"><strong>URL:</strong> ${data.url}</p>
+              <p class="result-classification"><strong>Classification:</strong> ${data.class_name}</p>
+              <div class="result-probabilities">
+                  <p><strong>Confidence:</strong></p>
+                  ${createProbabilityBars(data.probabilities)}
+              </div>
+          </div>
+      `;
 
-        // Show results (already visible in the design)
-        scanButton.textContent = "SCAN AGAIN";
-        scanButton.disabled = false;
+    // Add to results container
+    resultsContainer.appendChild(resultCard);
 
-        // Reset would happen on a new scan
-      }
-    }, 800); // Update progress every 800ms for demo
+    // Scroll to results
+    resultsSection.scrollIntoView({ behavior: "smooth" });
+  }
+
+  // Function to create probability bars
+  function createProbabilityBars(probabilities) {
+    if (!probabilities) return "<p>No probability data available</p>";
+
+    let barsHtml = "";
+
+    for (const [className, probability] of Object.entries(probabilities)) {
+      const percentage = Math.round(probability * 100);
+
+      barsHtml += `
+          <div class="probability-item">
+              <div class="probability-label">${className}</div>
+              <div class="probability-bar-container">
+                  <div class="probability-bar" style="width: ${percentage}%"></div>
+                  <div class="probability-value">${percentage}%</div>
+              </div>
+          </div>
+          `;
+    }
+
+    return barsHtml;
+  }
+
+  // Function to show error messages
+  function showError(message) {
+    if (!resultsSection || !resultsContainer) return;
+
+    // Show results section
+    resultsSection.style.display = "block";
+
+    // Display error
+    resultsContainer.innerHTML = `
+      <div class="error-message">
+          <p>${message}</p>
+      </div>
+      `;
   }
 });

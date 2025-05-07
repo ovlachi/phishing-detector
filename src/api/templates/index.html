@@ -45,6 +45,20 @@
                 <button type="submit" id="scan-button" class="btn btn-primary">Scan Now</button>
               </form>
 
+              <!-- Scan results section -->
+              <section id="results-section" class="results-section">
+                <div class="container">
+                  <h2>Scan Results</h2>
+                  <div id="loading-spinner" class="loading-spinner">
+                    <div class="spinner"></div>
+                    <p>Analyzing URL...</p>
+                  </div>
+                  <div id="results-container" class="results-container">
+                    <!-- Results will be displayed here dynamically -->
+                  </div>
+                </div>
+              </section>
+
               <div class="progress-container" style="display: none" id="progress-container">
                 <div class="progress-bar">
                   <div class="progress-fill" id="scan-progress"></div>
