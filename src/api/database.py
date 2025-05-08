@@ -55,10 +55,11 @@ async def get_user_by_username(username: str) -> Optional[Dict[str, Any]]:
 
 
 async def get_user_by_email(email: str) -> Optional[Dict[str, Any]]:
-    """Get a user by email"""
+    """Get a user by email address"""
+    print(f"Looking up user by email: {email}")
     user = await users_collection.find_one({"email": email})
+    print(f"User found by email: {user is not None}")
     return user
-
 
 async def update_user(user_id: str, update_data: Dict[str, Any]) -> bool:
     """Update a user's information"""

@@ -130,46 +130,50 @@ async def login_page(request: Request):
 async def register_page(request: Request):
     return templates.TemplateResponse("register.html", {"request": request})
 
-# Login form submission
+
+# Login form submission for email-based authentication
 @app.post("/login")
 async def login(request: Request, username: str = Form(...), password: str = Form(...)):
-    print(f"Login attempt for user: {username}")  # Debug
+    print(f"Login attempt for username: {username}")
     
-    user = await authenticate_user(username, password)
-    if not user:
-        print(f"Authentication failed for user: {username}")  # Debug
+    # Import authentication functions
+    from src.api.auth import verify_password
+    
+    # Use the username to find the user
+    user_data = await get_user_by_username(username)
+    
+    if not user_data:
+        print(f"No user found with username: {username}")
         return templates.TemplateResponse(
             "login.html", 
             {"request": request, "error": "Invalid username or password"}
         )
     
-    print(f"User authenticated successfully: {username}")  # Debug
+    # Convert to user model for verification
+    from src.api.models import UserInDB
+    user_db = UserInDB(**user_data)
     
-    # Create access token
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(
-        data={"sub": user.username}, expires_delta=access_token_expires
+    # Verify password
+    if not verify_password(password, user_db.hashed_password):
+        print(f"Invalid password for username: {username}")
+        return templates.TemplateResponse(
+            "login.html", 
+            {"request": request, "error": "Invalid username or password"}
+        )
+    
+    print(f"Authentication successful for username: {username}")
+    
+    # Create a user model to pass to the template
+    from src.api.models import User
+    user = User(**user_data)
+    
+    # Render authenticated.html directly with user info
+    return templates.TemplateResponse(
+        "authenticated.html", 
+        {"request": request, "user": user}
     )
-    
-    print(f"Token created: {access_token[:10]}...")  # Debug - show only first 10 chars
-    
-    # Redirect with cookie
-    response = RedirectResponse(url="/dashboard", status_code=303)
-    
-    # Set cookie with more debug
-    print("Setting cookie...")  # Debug
-    response.set_cookie(
-        key="access_token",
-        value=f"Bearer {access_token}",
-        httponly=False,
-        max_age=1800,
-        expires=1800,
-        samesite="lax"
-    )
-    
-    print("Cookie set, returning response")  # Debug
-    return response
 
+# Register form submission
 # Register form submission
 @app.post("/register")
 async def register(
@@ -179,9 +183,12 @@ async def register(
     full_name: str = Form(...),
     password: str = Form(...)
 ):
+    print(f"Registration attempt for username: {username}, email: {email}")
+    
     # Check if username already exists
     existing_user = await get_user_by_username(username)
     if existing_user:
+        print(f"Username already exists: {username}")
         return templates.TemplateResponse(
             "register.html",
             {"request": request, "error": "Username already exists"}
@@ -190,6 +197,7 @@ async def register(
     # Check if email already exists
     existing_email = await get_user_by_email(email)
     if existing_email:
+        print(f"Email already registered: {email}")
         return templates.TemplateResponse(
             "register.html",
             {"request": request, "error": "Email already registered"}
@@ -197,39 +205,38 @@ async def register(
     
     # Create new user
     try:
-        # Validate with UserCreate model
-        user_data = UserCreate(
-            username=username,
-            email=email,
-            full_name=full_name,
-            password=password
-        )
+        # Import password hashing function
+        from src.api.auth import get_password_hash
         
-        # Hash password and create user in database
-        hashed_password = get_password_hash(user_data.password)
-        user_dict = user_data.dict()
-        user_dict.pop("password")
-        user_dict["hashed_password"] = hashed_password
+        # Hash password
+        hashed_password = get_password_hash(password)
+        
+        # Prepare user data
+        user_data = {
+            "username": username,
+            "email": email,
+            "full_name": full_name,
+            "hashed_password": hashed_password,
+            "disabled": False,
+            "created_at": datetime.utcnow()
+        }
         
         # Add to database
-        await add_user(user_dict)
+        await add_user(user_data)
+        
+        print(f"User registered successfully: {username}")
         
         # Redirect to login page with success message
         return templates.TemplateResponse(
             "login.html",
             {"request": request, "message": "Registration successful. Please login."}
         )
-    except ValueError as e:
-        # Handle validation errors
-        return templates.TemplateResponse(
-            "register.html",
-            {"request": request, "error": str(e)}
-        )
     except Exception as e:
+        print(f"Error during registration: {str(e)}")
         # Handle other errors
         return templates.TemplateResponse(
             "register.html",
-            {"request": request, "error": "An error occurred during registration."}
+            {"request": request, "error": f"An error occurred during registration: {str(e)}"}
         )
 
 # Dashboard page
@@ -389,3 +396,6 @@ async def read_users_me(current_user: User = Depends(get_current_active_user)):
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)
+
+
+    

@@ -7,20 +7,51 @@
 document.addEventListener("DOMContentLoaded", function () {
   // Get form elements
   const loginForm = document.getElementById("login-form");
-  const emailInput = document.getElementById("email");
+
+  // Check if we're on the login page
+  if (!loginForm) {
+    console.log("Login form not found, not on login page");
+    return;
+  }
+
+  console.log("Login form found, initializing login page");
+
+  // Get the input elements - updated to match your HTML
+  const usernameInput = document.getElementById("username");
   const passwordInput = document.getElementById("password");
   const rememberCheckbox = document.getElementById("remember");
 
+  // Debug - log what we found
+  console.log("Username input:", usernameInput);
+  console.log("Password input:", passwordInput);
+
+  // Add error message container if it doesn't exist
+  let errorContainer = document.querySelector(".login-error");
+  if (!errorContainer) {
+    errorContainer = document.createElement("div");
+    errorContainer.className = "login-error";
+    errorContainer.style.display = "none";
+    errorContainer.style.color = "#FF3B30";
+    errorContainer.style.marginBottom = "15px";
+    loginForm.prepend(errorContainer);
+  }
+
   // Handle form submission
   loginForm.addEventListener("submit", function (event) {
-    event.preventDefault();
+    // Since we're using a regular form submission now with action="/login" method="post",
+    // we don't need to prevent the default behavior
+    // event.preventDefault();
+
+    console.log("Form submission detected");
 
     // Validate form fields
     const isValid = validateForm();
 
-    if (isValid) {
-      // Simulate login process
-      simulateLogin();
+    if (!isValid) {
+      event.preventDefault(); // Only prevent submission if validation fails
+      console.log("Validation failed, stopping submission");
+    } else {
+      console.log("Form submission proceeding");
     }
   });
 
@@ -28,51 +59,48 @@ document.addEventListener("DOMContentLoaded", function () {
   function validateForm() {
     let isValid = true;
 
-    // Check email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(emailInput.value)) {
-      emailInput.classList.add("invalid");
-      isValid = false;
+    // Check if username input exists before validating
+    if (usernameInput) {
+      // Check username is not empty
+      if (!usernameInput.value) {
+        usernameInput.classList.add("invalid");
+        showError("Please enter your username or email");
+        isValid = false;
+      } else {
+        usernameInput.classList.remove("invalid");
+      }
     } else {
-      emailInput.classList.remove("invalid");
+      console.error("Username input not found");
+      isValid = false;
     }
 
-    // Check password is not empty
-    if (!passwordInput.value) {
-      passwordInput.classList.add("invalid");
-      isValid = false;
+    // Check if password input exists before validating
+    if (passwordInput) {
+      // Check password is not empty
+      if (!passwordInput.value) {
+        passwordInput.classList.add("invalid");
+        showError("Please enter your password");
+        isValid = false;
+      } else {
+        passwordInput.classList.remove("invalid");
+      }
     } else {
-      passwordInput.classList.remove("invalid");
+      console.error("Password input not found");
+      isValid = false;
     }
 
     return isValid;
   }
 
-  // Simulate login process
-  function simulateLogin() {
-    // Disable form inputs during "submission"
-    const formElements = loginForm.elements;
-    for (let i = 0; i < formElements.length; i++) {
-      formElements[i].disabled = true;
-    }
+  // Show error message
+  function showError(message) {
+    errorContainer.textContent = message;
+    errorContainer.style.display = "block";
+  }
 
-    // Get submit button and show loading state
-    const submitButton = loginForm.querySelector('button[type="submit"]');
-    const originalText = submitButton.textContent;
-    submitButton.textContent = "Logging In...";
-
-    // Simulate server response delay
-    setTimeout(function () {
-      // Redirect to authenticated dashboard
-      window.location.href = "/dashboard";
-
-      // For demo purposes, just reset the form
-      // In real implementation, this code would not run due to the redirect
-      submitButton.textContent = originalText;
-      for (let i = 0; i < formElements.length; i++) {
-        formElements[i].disabled = false;
-      }
-    }, 2000);
+  // Hide error message
+  function hideError() {
+    errorContainer.style.display = "none";
   }
 
   // Add styles for validation
@@ -82,6 +110,15 @@ document.addEventListener("DOMContentLoaded", function () {
           border-color: #FF3B30;
           background-color: rgba(255, 59, 48, 0.05);
       }
+      
+      .login-error {
+          padding: 10px;
+          background-color: rgba(255, 59, 48, 0.1);
+          border-radius: 4px;
+          margin-bottom: 15px;
+      }
   `;
   document.head.appendChild(style);
+
+  console.log("Login page initialization complete");
 });
