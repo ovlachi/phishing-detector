@@ -123,3 +123,28 @@ async def get_user_from_cookie(cookie_token: str) -> Optional[User]:
     except Exception as e:
         print(f"Error extracting user from cookie: {str(e)}")  # Add debug
         return None
+    
+async def get_user_from_token(token: str):
+    """Extract user from auth header token"""
+    if not token or not token.startswith("Bearer "):
+        return None
+    
+    try:
+        token_value = token.split(" ")[1]
+        payload = jwt.decode(token_value, SECRET_KEY, algorithms=[ALGORITHM])
+        username = payload.get("sub")
+        if not username:
+            return None
+        
+        user_data = await get_user_by_username(username)
+        if not user_data:
+            return None
+            
+        # Convert ObjectId to string
+        if '_id' in user_data and not isinstance(user_data['_id'], str):
+            user_data['_id'] = str(user_data['_id'])
+            
+        return User(**user_data)
+    except Exception as e:
+        print(f"Token validation error: {str(e)}")
+        return None

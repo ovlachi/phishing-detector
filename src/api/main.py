@@ -1,5 +1,5 @@
 from fastapi import FastAPI, HTTPException, Depends, Request, Form
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.security import OAuth2PasswordRequestForm
@@ -175,12 +175,14 @@ async def register_page(request: Request):
 
 
 # Login form submission with proper ID conversion
+# Login form submission with proper cookie setting and debug
 @app.post("/login")
 async def login(request: Request, username: str = Form(...), password: str = Form(...)):
     print(f"Login attempt for username: {username}")
     
     # Import authentication functions
-    from src.api.auth import verify_password
+    from src.api.auth import verify_password, create_access_token
+    from datetime import timedelta
     
     # Use the username to find the user
     user_data = await get_user_by_username(username)
@@ -210,15 +212,40 @@ async def login(request: Request, username: str = Form(...), password: str = For
     
     print(f"Authentication successful for username: {username}")
     
+    # Create access token
+    from src.api.auth import ACCESS_TOKEN_EXPIRE_MINUTES
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={"sub": username}, expires_delta=access_token_expires
+    )
+    
+    print(f"Created token: {access_token[:10]}...")
+    
     # Create a user model to pass to the template
     from src.api.models import User
     user = User(**user_data)
     
     # Render authenticated.html directly with user info
-    return templates.TemplateResponse(
+    response = templates.TemplateResponse(
         "authenticated.html", 
         {"request": request, "user": user}
     )
+    
+    # Set cookie with token
+    token_value = f"Bearer {access_token}"
+    print(f"Setting cookie: access_token={token_value[:15]}...")
+    
+    response.set_cookie(
+        key="access_token",
+        value=token_value,
+        httponly=False,  # Allow JavaScript access
+        max_age=1800,
+        expires=1800,
+        samesite="lax",
+        path="/"  # Important: make cookie available for all paths
+    )
+    
+    return response
 
 # Register form submission
 @app.post("/register")
@@ -377,14 +404,43 @@ async def api_classify_url(request: UrlRequest, request_obj: Request):
 @app.post("/classify-batch", response_model=BatchPredictionResult)
 async def api_classify_batch(
     request: BatchUrlRequest, 
-    current_user: User = Depends(get_current_active_user)
+    request_obj: Request  # Add this to access headers directly
 ):
     try:
+        # Debug auth header
+        auth_header = request_obj.headers.get("Authorization")
+        print(f"Received Authorization header: {auth_header}")
+        
+        # Try to get user from auth header
+        user = None
+        if auth_header:
+            try:
+                from src.api.auth import get_user_from_token
+                user = await get_user_from_token(auth_header)
+                print(f"User from token: {user.username if user else 'None'}")
+            except Exception as e:
+                print(f"Error validating token: {str(e)}")
+                return JSONResponse(
+                    status_code=401,
+                    content={"detail": "Invalid authentication credentials"}
+                )
+        
+        if not user:
+            print("No authenticated user found")
+            return JSONResponse(
+                status_code=401,
+                content={"detail": "Authentication required"}
+            )
+        
+        # Check if model is loaded
         if classifier is None or pipeline is None:
             raise HTTPException(status_code=500, detail="Model not loaded")
         
+        # Process URLs
         urls = [str(url) for url in request.urls]
+        print(f"Processing {len(urls)} URLs in batch")
         
+        # Classify URLs
         start_time = time.time()
         results = classify_batch(urls, classifier, pipeline)
         processing_time = time.time() - start_time
@@ -394,7 +450,7 @@ async def api_classify_batch(
             if 'error' not in result:
                 # Create scan history entry
                 scan_entry = {
-                    "user_id": str(current_user.id),
+                    "user_id": str(user.id),
                     "url": result['url'],
                     "disposition": result.get('class', 'Unknown'),
                     "classification": result.get('class', 'Unknown'),
@@ -404,6 +460,7 @@ async def api_classify_batch(
                 }
                 await add_scan_record(scan_entry)
         
+        # Format response
         response_results = []
         for result in results:
             if 'error' in result and result['error']:
@@ -426,6 +483,7 @@ async def api_classify_batch(
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Error processing batch: {str(e)}")
+
 
 # Get scan history for current user
 @app.get("/scan-history")
