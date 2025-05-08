@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Dashboard - Phishing Detector</title>
+    <title>Dashboard - PhishR</title>
     <link rel="stylesheet" href="/src/api/static/css/normalize.css" />
     <link rel="stylesheet" href="/src/api/static/css/styles.css" />
     <link rel="stylesheet" href="/src/api/static/css/responsive.css" />
@@ -21,7 +21,7 @@
           <nav class="nav">
             <ul class="nav-list">
               <li><a href="/" class="nav-link">Home</a></li>
-              <li><a href="/authenticated.html" class="nav-link active">Dashboard</a></li>
+              <li><a href="/dashboard" class="nav-link active">Dashboard</a></li>
               <li><a href="/logout" class="nav-link btn btn-outline">Log Out</a></li>
             </ul>
           </nav>
@@ -102,6 +102,9 @@
                   </thead>
                   <tbody id="scan-history-body">
                     <!-- History entries will be populated here -->
+                    <tr>
+                      <td colspan="7" class="empty-history">No scan history available yet</td>
+                    </tr>
                   </tbody>
                 </table>
               </div>
@@ -129,147 +132,7 @@
 
     <footer class="footer">
       <div class="container">
-        <p>
-          &copy; 2025 <!DOCTYPE html>
-          <html lang="en">
-            <head>
-              <meta charset="UTF-8" />
-              <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-              <title>Dashboard - Phishing Detector</title>
-              <link rel="stylesheet" href="/src/api/static/css/normalize.css" />
-              <link rel="stylesheet" href="/src/api/static/css/styles.css" />
-              <link rel="stylesheet" href="/src/api/static/css/responsive.css" />
-            </head>
-            <body>
-              <header class="header">
-                <div class="container">
-                  <div class="header-content">
-                    <div class="logo">
-                      <a href="/">
-                        <img src="/src/api/static/img/logo-placeholder.svg" alt="PhishR Logo" />
-                        <span>PhishR</span>
-                      </a>
-                    </div>
-                    <nav class="nav">
-                      <ul class="nav-list">
-                        <li><a href="/" class="nav-link">Home</a></li>
-                        <li><a href="/authenticated.html" class="nav-link active">Dashboard</a></li>
-                        <li><a href="/logout" class="nav-link btn btn-outline">Log Out</a></li>
-                      </ul>
-                    </nav>
-                  </div>
-                </div>
-              </header>
-
-              <main>
-                <section class="hero">
-                  <div class="container">
-                    <div class="hero-content">
-                      <h1>Welcome, {{ user.full_name }}!</h1>
-                      <p>You are now logged in to your secure dashboard.</p>
-                    </div>
-                  </div>
-                </section>
-
-                <section class="features">
-                  <div class="container">
-                    <h2>User Dashboard</h2>
-
-                    <div class="feature-grid authenticated-dashboard">
-                      <!-- Single URL Scanner -->
-                      <div class="feature-card">
-                        <h3>URL Scanner</h3>
-                        <p>Scan any URL to check if it's legitimate or potentially dangerous.</p>
-                        <form id="scan-form" class="scan-form">
-                          <input type="url" id="url-input" name="url" placeholder="Enter a URL to scan..." required />
-                          <button type="submit" id="scan-button" class="btn btn-primary">Scan Now</button>
-                        </form>
-                      </div>
-
-                      <!-- Batch URL Scanner -->
-                      <div class="feature-card">
-                        <h3>Batch URL Scanning</h3>
-                        <p>Enter up to 10 URLs to scan them all at once, or upload a CSV file.</p>
-
-                        <!-- Batch URL Input Form -->
-                        <form id="batch-scan-form" class="batch-scan-form">
-                          <div class="url-inputs">
-                            <div class="url-input-container">
-                              <label>1. Please enter a new URL on each line (Limit 0/10)</label>
-                              <textarea id="batch-url-input" rows="10" placeholder="Enter URLs (one per line)" class="batch-url-textarea"></textarea>
-                            </div>
-                          </div>
-                          <div class="form-controls">
-                            <button type="submit" id="batch-scan-button" class="btn btn-primary">SCAN</button>
-                          </div>
-                        </form>
-
-                        <!-- CSV Upload Option -->
-                        <div class="csv-upload">
-                          <p>Or upload a CSV file with URLs (one URL per row)</p>
-                          <form id="csv-upload-form">
-                            <input type="file" id="csv-file-input" accept=".csv" />
-                            <button type="submit" class="btn btn-secondary">Upload & Scan</button>
-                          </form>
-                        </div>
-                      </div>
-
-                      <!-- Scan History -->
-                      <div class="feature-card">
-                        <h3>Scan History</h3>
-                        <p>View your recent URL scans and their results.</p>
-
-                        <div class="scan-history-table-container">
-                          <table class="scan-history-table">
-                            <thead>
-                              <tr>
-                                <th>Source URL</th>
-                                <th>IP Address</th>
-                                <th>Hosting Provider</th>
-                                <th>Disposition</th>
-                                <th class="sortable">Detection Date <span class="sort-icon">▼</span></th>
-                                <th>Brand</th>
-                                <th>Source</th>
-                              </tr>
-                            </thead>
-                            <tbody id="scan-history-body">
-                              <!-- History entries will be populated here -->
-                            </tbody>
-                          </table>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </section>
-
-                <!-- Results section for displaying single scan results -->
-                <section id="results-section" class="results-section">
-                  <div class="container">
-                    <h2>Scan Results</h2>
-                    <div id="loading-spinner" class="loading-spinner">
-                      <div class="spinner"></div>
-                      <p>Analyzing URL...</p>
-                    </div>
-                    <div id="results-container" class="results-container">
-                      <!-- Results will be displayed here dynamically -->
-                    </div>
-                  </div>
-                </section>
-
-                <!-- The batch results section will be added dynamically via JavaScript -->
-              </main>
-
-              <footer class="footer">
-                <div class="container">
-                  <p>&copy; 2025 PhishR. All rights reserved.</p>
-                </div>
-              </footer>
-
-              <script src="/src/api/static/js/main.js"></script>
-            </body>
-          </html>
-          . All rights reserved.
-        </p>
+        <p>&copy; 2025 PhishR. All rights reserved.</p>
       </div>
     </footer>
 

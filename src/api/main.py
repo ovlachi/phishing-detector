@@ -73,6 +73,48 @@ class BatchPredictionResult(BaseModel):
     results: List[PredictionResult]
     processing_time: float
 
+
+# Test User added to MongoDB from Python 
+# This function will be called on startup to create a test user if it doesn't exist
+@app.on_event("startup")
+async def create_test_user():
+    """Create a test user on application startup if it doesn't already exist"""
+    print("Checking if test user exists...")
+    
+    # Import necessary functions
+    from src.api.auth import get_password_hash
+    
+    # Check if test user exists
+    test_user = await get_user_by_username("testuser")
+    if test_user:
+        print("Test user already exists, skipping creation")
+        return
+    
+    # Create test user credentials
+    test_password = "TestPassword123!"  # A password that meets your requirements
+    hashed_password = get_password_hash(test_password)
+    
+    # Create user data
+    user_data = {
+        "username": "testuser",
+        "email": "testuser@example.com",
+        "full_name": "Test User",
+        "hashed_password": hashed_password,
+        "disabled": False,
+        "created_at": datetime.utcnow()
+    }
+    
+    try:
+        # Add user to database
+        await add_user(user_data)
+        print(f"Test user created successfully!")
+        print(f"Username: testuser")
+        print(f"Password: {test_password}")
+        print(f"You can now log in with these credentials")
+    except Exception as e:
+        print(f"Error creating test user: {str(e)}")
+# Test User Snippet END added to MongoDB from Python 
+
 # Setup event handlers
 @app.on_event("startup")
 async def startup_db_client():
@@ -128,10 +170,11 @@ async def login_page(request: Request):
 # Register page
 @app.get("/register", response_class=HTMLResponse)
 async def register_page(request: Request):
+    print("GET /register accessed")
     return templates.TemplateResponse("register.html", {"request": request})
 
 
-# Login form submission for email-based authentication
+# Login form submission with proper ID conversion
 @app.post("/login")
 async def login(request: Request, username: str = Form(...), password: str = Form(...)):
     print(f"Login attempt for username: {username}")
@@ -148,6 +191,10 @@ async def login(request: Request, username: str = Form(...), password: str = For
             "login.html", 
             {"request": request, "error": "Invalid username or password"}
         )
+    
+    # Convert MongoDB ObjectId to string for Pydantic model
+    if '_id' in user_data and not isinstance(user_data['_id'], str):
+        user_data['_id'] = str(user_data['_id'])
     
     # Convert to user model for verification
     from src.api.models import UserInDB
@@ -174,7 +221,6 @@ async def login(request: Request, username: str = Form(...), password: str = For
     )
 
 # Register form submission
-# Register form submission
 @app.post("/register")
 async def register(
     request: Request, 
@@ -183,6 +229,8 @@ async def register(
     full_name: str = Form(...),
     password: str = Form(...)
 ):
+    print("POST /register accessed")
+    print(f"Form data: username={username}, email={email}, full_name={full_name}")
     print(f"Registration attempt for username: {username}, email: {email}")
     
     # Check if username already exists
