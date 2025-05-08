@@ -64,7 +64,7 @@ document.addEventListener("DOMContentLoaded", function () {
     // Simulate server response delay
     setTimeout(function () {
       // Redirect to authenticated dashboard
-      window.location.href = "authenticated.html";
+      window.location.href = "/dashboard";
 
       // For demo purposes, just reset the form
       // In real implementation, this code would not run due to the redirect

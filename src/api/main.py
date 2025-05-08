@@ -4,7 +4,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel, AnyHttpUrl
-from datetime import timedelta
+from datetime import datetime, timedelta
 from typing import List, Optional, Dict
 import uvicorn
 import time
@@ -18,10 +18,17 @@ project_root = str(Path(__file__).parent.parent.parent)
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
+# Import database and models
+from src.api.database import (
+    init_db, add_user, get_user_by_username, get_user_by_email,
+    add_scan_record, get_user_scan_history
+)
+from src.api.models import (
+    User, UserCreate, Token, ScanHistoryEntry
+)
 from src.api.auth import (
-    Token, User, authenticate_user, create_access_token, 
-    get_current_active_user, ACCESS_TOKEN_EXPIRE_MINUTES, fake_users_db,
-    get_password_hash
+    authenticate_user, create_access_token, get_current_active_user,
+    get_password_hash, ACCESS_TOKEN_EXPIRE_MINUTES, get_user_from_cookie
 )
 from src.predict import load_model_and_pipeline, classify_url, classify_batch
 
@@ -33,7 +40,6 @@ app = FastAPI(
 )
 
 # Configure static files and templates
-# Updated static files path to match the path used in HTML files
 app.mount("/src/api/static", StaticFiles(directory=os.path.join(os.path.dirname(__file__), "static")), name="static")
 templates = Jinja2Templates(directory=os.path.join(os.path.dirname(__file__), "templates"))
 
@@ -67,10 +73,16 @@ class BatchPredictionResult(BaseModel):
     results: List[PredictionResult]
     processing_time: float
 
+# Setup event handlers
+@app.on_event("startup")
+async def startup_db_client():
+    """Initialize database on startup"""
+    await init_db()
+
 # Authentication endpoint
 @app.post("/token", response_model=Token)
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
-    user = authenticate_user(fake_users_db, form_data.username, form_data.password)
+    user = await authenticate_user(form_data.username, form_data.password)
     if not user:
         raise HTTPException(
             status_code=401,
@@ -81,12 +93,32 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
     access_token = create_access_token(
         data={"sub": user.username}, expires_delta=access_token_expires
     )
-    return {"access_token": access_token, "token_type": "bearer"}
+    return {
+        "access_token": access_token, 
+        "token_type": "bearer",
+        "username": user.username,
+        "full_name": user.full_name
+    }
 
 # Serve HTML UI
 @app.get("/", response_class=HTMLResponse)
 async def serve_ui(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+    # Check if user is logged in from cookie
+    token = request.cookies.get("access_token")
+    user = None
+    if token:
+        user = await get_user_from_cookie(token)
+    
+    return templates.TemplateResponse("index.html", {"request": request, "user": user})
+
+# Add redirects for .html URLs
+@app.get("/login.html")
+async def login_html_redirect():
+    return RedirectResponse(url="/login", status_code=301)
+
+@app.get("/register.html")
+async def register_html_redirect():
+    return RedirectResponse(url="/register", status_code=301)
 
 # Login page
 @app.get("/login", response_class=HTMLResponse)
@@ -99,10 +131,9 @@ async def register_page(request: Request):
     return templates.TemplateResponse("register.html", {"request": request})
 
 # Login form submission
-# Login form submission
 @app.post("/login")
 async def login(request: Request, username: str = Form(...), password: str = Form(...)):
-    user = authenticate_user(fake_users_db, username, password)
+    user = await authenticate_user(username, password)
     if not user:
         return templates.TemplateResponse(
             "login.html", 
@@ -114,13 +145,8 @@ async def login(request: Request, username: str = Form(...), password: str = For
         data={"sub": user.username}, expires_delta=access_token_expires
     )
     
-    # Instead of redirecting to authenticated.html, render it directly
-    response = templates.TemplateResponse(
-        "authenticated.html",
-        {"request": request, "user": user}
-    )
-    
-    # Set the token cookie on the response
+    response = RedirectResponse(url="/dashboard", status_code=303)
+    # Set cookie for JavaScript access
     response.set_cookie(
         key="access_token",
         value=f"Bearer {access_token}",
@@ -129,7 +155,6 @@ async def login(request: Request, username: str = Form(...), password: str = For
         expires=1800,
         samesite="lax"
     )
-    
     return response
 
 # Register form submission
@@ -142,27 +167,71 @@ async def register(
     password: str = Form(...)
 ):
     # Check if username already exists
-    if username in fake_users_db:
+    existing_user = await get_user_by_username(username)
+    if existing_user:
         return templates.TemplateResponse(
             "register.html",
             {"request": request, "error": "Username already exists"}
         )
     
-    # Create new user
-    hashed_password = get_password_hash(password)
-    fake_users_db[username] = {
-        "username": username,
-        "email": email,
-        "full_name": full_name,
-        "hashed_password": hashed_password,
-        "disabled": False
-    }
+    # Check if email already exists
+    existing_email = await get_user_by_email(email)
+    if existing_email:
+        return templates.TemplateResponse(
+            "register.html",
+            {"request": request, "error": "Email already registered"}
+        )
     
-    # Redirect to login page with success message
-    return templates.TemplateResponse(
-        "login.html",
-        {"request": request, "message": "Registration successful. Please login."}
-    )
+    # Create new user
+    try:
+        # Validate with UserCreate model
+        user_data = UserCreate(
+            username=username,
+            email=email,
+            full_name=full_name,
+            password=password
+        )
+        
+        # Hash password and create user in database
+        hashed_password = get_password_hash(user_data.password)
+        user_dict = user_data.dict()
+        user_dict.pop("password")
+        user_dict["hashed_password"] = hashed_password
+        
+        # Add to database
+        await add_user(user_dict)
+        
+        # Redirect to login page with success message
+        return templates.TemplateResponse(
+            "login.html",
+            {"request": request, "message": "Registration successful. Please login."}
+        )
+    except ValueError as e:
+        # Handle validation errors
+        return templates.TemplateResponse(
+            "register.html",
+            {"request": request, "error": str(e)}
+        )
+    except Exception as e:
+        # Handle other errors
+        return templates.TemplateResponse(
+            "register.html",
+            {"request": request, "error": "An error occurred during registration."}
+        )
+
+# Dashboard page
+@app.get("/dashboard", response_class=HTMLResponse)
+async def dashboard(request: Request):
+    # Get user from cookie
+    token = request.cookies.get("access_token")
+    if not token:
+        return RedirectResponse(url="/login", status_code=302)
+    
+    user = await get_user_from_cookie(token)
+    if not user:
+        return RedirectResponse(url="/login", status_code=302)
+    
+    return templates.TemplateResponse("authenticated.html", {"request": request, "user": user})
 
 # Logout
 @app.get("/logout")
@@ -171,46 +240,6 @@ async def logout():
     response.delete_cookie(key="access_token")
     return response
 
-# Authenticated page
-@app.get("/authenticated.html", response_class=HTMLResponse)
-async def authenticated_page(request: Request):
-    # Get the token from the cookie
-    token = request.cookies.get("access_token")
-    
-    if not token:
-        # If no token is present, redirect to login
-        return RedirectResponse(url="/login", status_code=302)
-    
-    try:
-        # Extract token and get user
-        token_type, access_token = token.split()
-        
-        # Validate token and get username
-        from jose import jwt, JWTError
-        from src.api.auth import SECRET_KEY, ALGORITHM, fake_users_db, User
-        
-        payload = jwt.decode(access_token, SECRET_KEY, algorithms=[ALGORITHM])
-        username = payload.get("sub")
-        
-        if not username or username not in fake_users_db:
-            raise JWTError("Invalid token")
-            
-        # Get user from database
-        user_dict = fake_users_db[username]
-        user = User(
-            username=username,
-            email=user_dict.get("email", ""),
-            full_name=user_dict.get("full_name", ""),
-            disabled=user_dict.get("disabled", False)
-        )
-        
-        # Render template with user data
-        return templates.TemplateResponse("authenticated.html", {"request": request, "user": user})
-        
-    except Exception as e:
-        print(f"Authentication error: {str(e)}")
-        return RedirectResponse(url="/login", status_code=302)
-
 # Authentication status endpoint
 @app.get("/auth-status")
 async def auth_status(current_user: User = Depends(get_current_active_user)):
@@ -218,7 +247,7 @@ async def auth_status(current_user: User = Depends(get_current_active_user)):
 
 # Single URL classification (public)
 @app.post("/classify", response_model=PredictionResult)
-async def api_classify_url(request: UrlRequest):
+async def api_classify_url(request: UrlRequest, request_obj: Request):
     try:
         if classifier is None or pipeline is None:
             raise HTTPException(status_code=500, detail="Model not loaded")
@@ -227,6 +256,23 @@ async def api_classify_url(request: UrlRequest):
         print(f"Processing URL: {url}")  # Debug output
         
         result = classify_url(url, classifier, pipeline)
+        
+        # Try to save to scan history if user is logged in
+        token = request_obj.cookies.get("access_token")
+        if token:
+            user = await get_user_from_cookie(token)
+            if user and 'error' not in result:
+                # Create scan history entry
+                scan_entry = {
+                    "user_id": str(user.id),
+                    "url": url,
+                    "disposition": result.get('class', 'Unknown'),
+                    "classification": result.get('class', 'Unknown'),
+                    "probabilities": result.get('probabilities'),
+                    "timestamp": datetime.utcnow(),
+                    "source": "Single Scan"
+                }
+                await add_scan_record(scan_entry)
         
         if 'error' in result:
             return PredictionResult(
@@ -263,6 +309,21 @@ async def api_classify_batch(
         results = classify_batch(urls, classifier, pipeline)
         processing_time = time.time() - start_time
         
+        # Save results to scan history
+        for result in results:
+            if 'error' not in result:
+                # Create scan history entry
+                scan_entry = {
+                    "user_id": str(current_user.id),
+                    "url": result['url'],
+                    "disposition": result.get('class', 'Unknown'),
+                    "classification": result.get('class', 'Unknown'),
+                    "probabilities": result.get('probabilities'),
+                    "timestamp": datetime.utcnow(),
+                    "source": "Batch Scan"
+                }
+                await add_scan_record(scan_entry)
+        
         response_results = []
         for result in results:
             if 'error' in result and result['error']:
@@ -285,6 +346,16 @@ async def api_classify_batch(
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Error processing batch: {str(e)}")
+
+# Get scan history for current user
+@app.get("/scan-history")
+async def get_scan_history(current_user: User = Depends(get_current_active_user)):
+    try:
+        # Get history from database
+        history = await get_user_scan_history(str(current_user.id))
+        return {"history": history}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error retrieving scan history: {str(e)}")
 
 # User info endpoint
 @app.get("/users/me", response_model=User)
