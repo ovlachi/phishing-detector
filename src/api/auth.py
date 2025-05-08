@@ -96,20 +96,30 @@ async def get_current_active_user(current_user: User = Depends(get_current_user)
 # Function to extract user from token in cookie (for templates)
 async def get_user_from_cookie(cookie_token: str) -> Optional[User]:
     """Extract user from token cookie"""
+    print(f"Processing cookie token: {cookie_token}")  # Add debug
+    
     if not cookie_token or not cookie_token.startswith("Bearer "):
+        print("Invalid token format")  # Add debug
         return None
     
     token = cookie_token.split(" ")[1]
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username = payload.get("sub")
+        
+        print(f"Username from token: {username}")  # Add debug
+        
         if not username:
             return None
         
         user_data = await get_user_by_username(username)
+        
+        print(f"User data: {user_data}")  # Add debug
+        
         if not user_data:
             return None
             
         return User(**user_data)
-    except Exception:
+    except Exception as e:
+        print(f"Error extracting user from cookie: {str(e)}")  # Add debug
         return None

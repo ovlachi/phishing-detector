@@ -11,6 +11,9 @@ from typing import Optional, Dict, Any, List
 MONGO_URL = os.getenv("MONGO_URL", "mongodb+srv://mainUser:8nLh3v2H1A0iVfr1@cluster0.nipyff1.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
 DB_NAME = os.getenv("DB_NAME", "phishing_detector")
 
+print(f"Connecting to MongoDB at: {MONGO_URL}")
+print(f"Using database: {DB_NAME}")
+
 # Create client and database connections
 client = motor.motor_asyncio.AsyncIOMotorClient(MONGO_URL)
 database = client[DB_NAME]
@@ -45,7 +48,9 @@ async def add_user(user_data: Dict[str, Any]) -> str:
 
 async def get_user_by_username(username: str) -> Optional[Dict[str, Any]]:
     """Get a user by username"""
+    print(f"Looking up user: {username}")
     user = await users_collection.find_one({"username": username})
+    print(f"User found: {user is not None}")
     return user
 
 

@@ -133,28 +133,41 @@ async def register_page(request: Request):
 # Login form submission
 @app.post("/login")
 async def login(request: Request, username: str = Form(...), password: str = Form(...)):
+    print(f"Login attempt for user: {username}")  # Debug
+    
     user = await authenticate_user(username, password)
     if not user:
+        print(f"Authentication failed for user: {username}")  # Debug
         return templates.TemplateResponse(
             "login.html", 
             {"request": request, "error": "Invalid username or password"}
         )
     
+    print(f"User authenticated successfully: {username}")  # Debug
+    
+    # Create access token
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
         data={"sub": user.username}, expires_delta=access_token_expires
     )
     
+    print(f"Token created: {access_token[:10]}...")  # Debug - show only first 10 chars
+    
+    # Redirect with cookie
     response = RedirectResponse(url="/dashboard", status_code=303)
-    # Set cookie for JavaScript access
+    
+    # Set cookie with more debug
+    print("Setting cookie...")  # Debug
     response.set_cookie(
         key="access_token",
         value=f"Bearer {access_token}",
-        httponly=False,  # Allow JavaScript access
+        httponly=False,
         max_age=1800,
         expires=1800,
         samesite="lax"
     )
+    
+    print("Cookie set, returning response")  # Debug
     return response
 
 # Register form submission
@@ -224,14 +237,26 @@ async def register(
 async def dashboard(request: Request):
     # Get user from cookie
     token = request.cookies.get("access_token")
+    
+    print(f"Token from cookie: {token}")  # Add this debug line
+    
     if not token:
+        print("No token found in cookies")  # Add this debug line
         return RedirectResponse(url="/login", status_code=302)
     
-    user = await get_user_from_cookie(token)
-    if not user:
+    try:
+        user = await get_user_from_cookie(token)
+        
+        print(f"User from token: {user}")  # Add this debug line
+        
+        if not user:
+            print("No user found from token")  # Add this debug line
+            return RedirectResponse(url="/login", status_code=302)
+        
+        return templates.TemplateResponse("authenticated.html", {"request": request, "user": user})
+    except Exception as e:
+        print(f"Authentication error: {str(e)}")  # Add this debug line
         return RedirectResponse(url="/login", status_code=302)
-    
-    return templates.TemplateResponse("authenticated.html", {"request": request, "user": user})
 
 # Logout
 @app.get("/logout")
