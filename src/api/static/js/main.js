@@ -239,11 +239,11 @@ function displayResults(data) {
     resultClass = "safe";
     resultIcon = "✅";
     resultMessage = "This URL appears to be legitimate";
-  } else if (className === "phishing") {
+  } else if (className === "credential phishing") {
     resultClass = "dangerous";
     resultIcon = "⚠️";
     resultMessage = "Warning: This URL may be a phishing attempt";
-  } else if (className === "malware") {
+  } else if (className === "malware distribution") {
     resultClass = "dangerous";
     resultIcon = "🛑";
     resultMessage = "Danger: This URL may contain malware";
@@ -401,10 +401,16 @@ function initializeBatchUrlScanner() {
         };
 
         if (token) {
-          headers["Authorization"] = token;
+          // Remove any quotes from the token
+          let authToken = token;
+          if (authToken.startsWith('"') && authToken.endsWith('"')) {
+            authToken = authToken.substring(1, authToken.length - 1);
+          }
+
+          headers["Authorization"] = authToken; // Don't add extra quotes
           console.log("Added Authorization header:", headers["Authorization"]);
         } else {
-          console.warn("No token available for batch scan");
+          console.warn("No token available for request");
         }
 
         // Call API for batch scanning with Authorization header
@@ -671,21 +677,47 @@ function loadScanHistory() {
 
   // Get authentication token
   const token = getCookie("access_token");
-  if (!token) return;
+  if (!token) {
+    console.warn("No token available for scan history");
+    scanHistoryBody.innerHTML = `
+          <tr>
+              <td colspan="7" class="empty-history">
+                  Authentication required to view scan history.
+              </td>
+          </tr>
+      `;
+    return;
+  }
+
+  console.log("Loading scan history with token:", token.substring(0, 15) + "...");
+
+  // Build headers with proper token handling
+  const headers = {
+    "Content-Type": "application/json"
+  };
+
+  // Remove any quotes from the token
+  let authToken = token;
+  if (authToken.startsWith('"') && authToken.endsWith('"')) {
+    authToken = authToken.substring(1, authToken.length - 1);
+  }
+
+  headers["Authorization"] = authToken; // Don't add extra quotes
+  console.log("Added Authorization header for scan history:", headers["Authorization"].substring(0, 20) + "...");
 
   // Fetch scan history from server
   fetch("/scan-history", {
-    headers: {
-      Authorization: token
-    }
+    headers: headers
   })
     .then((response) => {
+      console.log("Scan history response status:", response.status);
       if (!response.ok) {
-        throw new Error("Failed to load scan history");
+        throw new Error(`Failed to load scan history: ${response.status}`);
       }
       return response.json();
     })
     .then((data) => {
+      console.log("Scan history data received:", data);
       displayScanHistory(data.history || []);
     })
     .catch((error) => {

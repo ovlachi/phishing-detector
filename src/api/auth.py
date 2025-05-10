@@ -126,25 +126,52 @@ async def get_user_from_cookie(cookie_token: str) -> Optional[User]:
     
 async def get_user_from_token(token: str):
     """Extract user from auth header token"""
+    print(f"get_user_from_token called with token: {token[:15]}...")
+    
+    # Remove any quotes from the token
+    if token and token.startswith('"') and token.endswith('"'):
+        token = token[1:-1]  # Remove surrounding quotes
+        print(f"Removed quotes from token: {token[:15]}...")
+    
     if not token or not token.startswith("Bearer "):
+        print("Token does not start with 'Bearer '")
         return None
     
     try:
         token_value = token.split(" ")[1]
+        print(f"Extracted token value: {token_value[:10]}...")
+        
         payload = jwt.decode(token_value, SECRET_KEY, algorithms=[ALGORITHM])
+        print(f"Token payload: {payload}")
+        
         username = payload.get("sub")
+        print(f"Username from token: {username}")
+        
         if not username:
+            print("No username in token payload")
             return None
         
+        print(f"Looking up user by username: {username}")
         user_data = await get_user_by_username(username)
+        print(f"User lookup result: {user_data is not None}")
+        
         if not user_data:
+            print(f"No user found with username: {username}")
             return None
-            
+        
         # Convert ObjectId to string
         if '_id' in user_data and not isinstance(user_data['_id'], str):
             user_data['_id'] = str(user_data['_id'])
-            
-        return User(**user_data)
+            print("Converted ObjectId to string")
+        
+        print("Creating User model from user_data")
+        from src.api.models import User
+        user = User(**user_data)
+        print(f"Created User model with username: {user.username}, id: {user.id}")
+        
+        return user
     except Exception as e:
-        print(f"Token validation error: {str(e)}")
+        print(f"Exception in get_user_from_token: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return None

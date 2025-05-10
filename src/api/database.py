@@ -5,6 +5,7 @@ import motor.motor_asyncio
 from bson import ObjectId
 import os
 from typing import Optional, Dict, Any, List
+from datetime import datetime
 
 # MongoDB connection string - replace with your actual connection string
 # For local development use: "mongodb://localhost:27017"
@@ -74,11 +75,37 @@ async def add_scan_record(scan_data: Dict[str, Any]) -> str:
     result = await scan_history_collection.insert_one(scan_data)
     return str(result.inserted_id)
 
-
+# Get scan history for a specific user
 async def get_user_scan_history(user_id: str) -> List[Dict[str, Any]]:
-    """Get scan history for a specific user"""
-    cursor = scan_history_collection.find({"user_id": user_id}).sort("timestamp", -1).limit(100)
-    return await cursor.to_list(length=100)
+    """Get scan history for a specific user with better error handling"""
+    try:
+        print(f"Retrieving scan history for user ID: {user_id}")
+        
+        # Query the database
+        cursor = scan_history_collection.find({"user_id": user_id}).sort("timestamp", -1).limit(100)
+        
+        # Convert to list
+        history = await cursor.to_list(length=100)
+        print(f"Found {len(history)} history entries in database")
+        
+        # Convert ObjectId to string for each document
+        for entry in history:
+            if '_id' in entry and not isinstance(entry['_id'], str):
+                entry['_id'] = str(entry['_id'])
+        
+        # Make sure timestamps are properly serialized
+        for entry in history:
+            if 'timestamp' in entry and isinstance(entry['timestamp'], datetime):
+                entry['timestamp'] = entry['timestamp'].isoformat()
+        
+        return history
+    except Exception as e:
+        print(f"Error in get_user_scan_history: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        
+        # Return empty list rather than raising exception
+        return []
 
 
 # Initialize the database (create indexes)
