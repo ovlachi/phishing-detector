@@ -200,13 +200,17 @@ function initializeSingleUrlScanner() {
 }
 
 /**
- * Display single URL scan results
+ * Display single URL scan results with proper classification display
  */
 function displayResults(data) {
   const resultsSection = document.getElementById("results-section");
   const resultsContainer = document.getElementById("results-container");
 
-  if (!resultsSection || !resultsContainer) return;
+  // Ensure the results section exists before proceeding
+  if (!resultsSection || !resultsContainer) {
+    console.error("Results elements not found");
+    return;
+  }
 
   // Show results section
   resultsSection.style.display = "block";
@@ -214,16 +218,49 @@ function displayResults(data) {
   // Clear previous results
   resultsContainer.innerHTML = "";
 
+  // Check if there's an error
   if (data.error) {
-    // Handle error
-    const errorElement = document.createElement("div");
-    errorElement.className = "result-error";
-    errorElement.textContent = `Error: ${data.error}`;
-    resultsContainer.appendChild(errorElement);
+    // Create error-specific result card
+    const errorCard = document.createElement("div");
+    errorCard.className = "result-card error-card";
+
+    // Check if it's a fetch error
+    if (data.error.includes("Failed to fetch content")) {
+      errorCard.innerHTML = `
+              <div class="result-header">
+                  <span class="result-icon">⚠️</span>
+                  <h3 class="result-title">Failed to Fetch Content</h3>
+              </div>
+              <div class="result-details">
+                  <p class="result-url"><strong>URL:</strong> ${data.url}</p>
+                  <p class="error-explanation">Unable to access the website content for analysis. This may be due to:</p>
+                  <ul class="error-reasons">
+                      <li>Network connectivity issues</li>
+                      <li>Website temporarily unavailable</li>
+                      <li>SSL/TLS certificate problems</li>
+                      <li>Access restrictions on the target site</li>
+                  </ul>
+                  <p class="error-note">Please try again later or verify the URL is correct.</p>
+              </div>
+          `;
+    } else {
+      // Generic error message
+      errorCard.innerHTML = `
+              <div class="result-header">
+                  <span class="result-icon">❌</span>
+                  <h3 class="result-title">Error</h3>
+              </div>
+              <div class="result-details">
+                  <p class="error-message">${data.error}</p>
+              </div>
+          `;
+    }
+
+    resultsContainer.appendChild(errorCard);
     return;
   }
 
-  // Create result card
+  // Create result card for successful scan
   const resultCard = document.createElement("div");
   resultCard.className = "result-card";
 
@@ -235,22 +272,63 @@ function displayResults(data) {
   // Convert to lowercase for case-insensitive comparison
   const className = data.class_name ? data.class_name.toLowerCase() : "";
 
+  // Check for specific classifications
   if (className === "legitimate") {
     resultClass = "safe";
     resultIcon = "✅";
     resultMessage = "This URL appears to be legitimate";
-  } else if (className === "credential phishing") {
+  } else if (className === "phishing" || className === "credential phishing") {
     resultClass = "dangerous";
     resultIcon = "⚠️";
-    resultMessage = "Warning: This URL may be a phishing attempt";
-  } else if (className === "malware distribution") {
+    resultMessage = "Warning: This URL may be a credential phishing attempt";
+  } else if (className === "malware" || className === "malware distribution") {
     resultClass = "dangerous";
     resultIcon = "🛑";
     resultMessage = "Danger: This URL may contain malware";
   }
 
+  // If classification is still unknown, but we have probabilities, use the highest one
+  if (resultClass === "neutral" && data.probabilities) {
+    let highestProb = 0;
+    let highestClass = "Unknown";
+
+    for (const [className, probability] of Object.entries(data.probabilities)) {
+      if (probability > highestProb) {
+        highestProb = probability;
+        highestClass = className;
+      }
+    }
+
+    // If we found a high probability class, use that
+    if (highestProb > 0.3) {
+      // 30% threshold
+      const highClassName = highestClass.toLowerCase();
+      if (highClassName === "legitimate") {
+        resultClass = "safe";
+        resultIcon = "✅";
+        resultMessage = "This URL appears to be legitimate";
+      } else if (highClassName === "phishing" || highClassName === "credential phishing") {
+        resultClass = "dangerous";
+        resultIcon = "⚠️";
+        resultMessage = "Warning: This URL may be a credential phishing attempt";
+      } else if (highClassName === "malware" || highClassName === "malware distribution") {
+        resultClass = "dangerous";
+        resultIcon = "🛑";
+        resultMessage = "Danger: This URL may contain malware";
+      }
+    }
+  }
+
   // Add class to card
   resultCard.classList.add(resultClass);
+
+  // Normalize the class name for display
+  let displayClassification = data.class_name || "Unknown";
+  if (displayClassification.toLowerCase() === "phishing") {
+    displayClassification = "Credential Phishing";
+  } else if (displayClassification.toLowerCase() === "credential phishing") {
+    displayClassification = "Credential Phishing";
+  }
 
   // Create HTML for result
   resultCard.innerHTML = `
@@ -260,7 +338,7 @@ function displayResults(data) {
       </div>
       <div class="result-details">
           <p class="result-url"><strong>URL:</strong> ${data.url}</p>
-          <p class="result-classification"><strong>Classification:</strong> ${data.class_name}</p>
+          <p class="result-classification"><strong>Classification:</strong> ${displayClassification}</p>
           <div class="result-probabilities">
               <p><strong>Confidence:</strong></p>
               ${createProbabilityBars(data.probabilities)}
@@ -271,12 +349,17 @@ function displayResults(data) {
   // Add to results container
   resultsContainer.appendChild(resultCard);
 
-  // Scroll to results
-  resultsSection.scrollIntoView({ behavior: "smooth" });
+  // Scroll to results without interfering with the header
+  window.scrollTo({
+    top: resultsSection.offsetTop,
+    behavior: "smooth"
+  });
 
   // Refresh scan history if available
   setTimeout(() => {
-    loadScanHistory();
+    if (typeof loadScanHistory === "function") {
+      loadScanHistory();
+    }
   }, 1000);
 }
 
@@ -291,9 +374,22 @@ function createProbabilityBars(probabilities) {
   for (const [className, probability] of Object.entries(probabilities)) {
     const percentage = Math.round(probability * 100);
 
+    // Normalize the class name for display
+    let displayClassName = className;
+    if (className.toLowerCase() === "phishing") {
+      displayClassName = "Credential Phishing";
+    } else if (className.toLowerCase() === "credential phishing") {
+      displayClassName = "Credential Phishing";
+    } else if (className.toLowerCase() === "malware distribution") {
+      displayClassName = "Malware Distribution";
+    } else {
+      // Capitalize first letter
+      displayClassName = className.charAt(0).toUpperCase() + className.slice(1);
+    }
+
     barsHtml += `
       <div class="probability-item">
-          <div class="probability-label">${className}</div>
+          <div class="probability-label">${displayClassName}</div>
           <div class="probability-bar-container">
               <div class="probability-bar" style="width: ${percentage}%"></div>
               <div class="probability-value">${percentage}%</div>
@@ -617,10 +713,19 @@ function processBatchResults(results) {
     const row = document.createElement("tr");
 
     if (result.error) {
+      // Special handling for fetch errors
+      let errorStatusClass = "status-error";
+      let errorMessage = result.error;
+
+      if (result.error.includes("Failed to fetch content")) {
+        errorStatusClass = "status-fetch-error";
+        errorMessage = "Failed to fetch content";
+      }
+
       row.innerHTML = `
               <td>${result.url}</td>
               <td colspan="2">Error</td>
-              <td class="status-error">${result.error}</td>
+              <td class="${errorStatusClass}" title="${result.error}">${errorMessage}</td>
           `;
     } else {
       // Get highest probability class
@@ -642,16 +747,20 @@ function processBatchResults(results) {
         const className = result.class_name.toLowerCase();
         if (className === "legitimate") {
           statusClass = "status-clean";
-        } else if (className === "phishing" || className === "malware") {
+        } else if (className === "phishing" || className === "malware" || className === "malware distribution") {
           statusClass = "status-phishing";
         }
       }
 
+      // Determine display name
+      let displayName = result.class_name || "Unknown";
+      let statusDisplay = result.class_name === "legitimate" ? "Clean" : result.class_name || "Unknown";
+
       row.innerHTML = `
               <td>${result.url}</td>
-              <td>${result.class_name || "Unknown"}</td>
+              <td>${displayName}</td>
               <td>${confidence}%</td>
-              <td class="${statusClass}">${result.class_name === "legitimate" ? "Clean" : result.class_name || "Unknown"}</td>
+              <td class="${statusClass}">${statusDisplay}</td>
           `;
     }
 

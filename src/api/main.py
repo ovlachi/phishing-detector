@@ -314,30 +314,31 @@ async def register(
             {"request": request, "error": f"An error occurred during registration: {str(e)}"}
         )
 
-# Dashboard page
+# Dashboard page route
 @app.get("/dashboard", response_class=HTMLResponse)
 async def dashboard(request: Request):
     # Get user from cookie
     token = request.cookies.get("access_token")
-    
-    print(f"Token from cookie: {token}")  # Add this debug line
+    print(f"Token from cookie: {token}")
     
     if not token:
-        print("No token found in cookies")  # Add this debug line
+        print("No token found, redirecting to login")
         return RedirectResponse(url="/login", status_code=302)
     
     try:
         user = await get_user_from_cookie(token)
-        
-        print(f"User from token: {user}")  # Add this debug line
+        print(f"User from token: {user}")
         
         if not user:
-            print("No user found from token")  # Add this debug line
+            print("No user found from token")
             return RedirectResponse(url="/login", status_code=302)
         
+        print(f"Rendering authenticated.html for user: {user.username}")
         return templates.TemplateResponse("authenticated.html", {"request": request, "user": user})
     except Exception as e:
-        print(f"Authentication error: {str(e)}")  # Add this debug line
+        print(f"Error in dashboard route: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return RedirectResponse(url="/login", status_code=302)
 
 # Logout

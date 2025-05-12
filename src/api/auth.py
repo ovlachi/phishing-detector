@@ -96,32 +96,48 @@ async def get_current_active_user(current_user: User = Depends(get_current_user)
 # Function to extract user from token in cookie (for templates)
 async def get_user_from_cookie(cookie_token: str) -> Optional[User]:
     """Extract user from token cookie"""
-    print(f"Processing cookie token: {cookie_token}")  # Add debug
+    print(f"Processing cookie token: {cookie_token}")
     
     if not cookie_token or not cookie_token.startswith("Bearer "):
-        print("Invalid token format")  # Add debug
+        print("Invalid token format")
         return None
     
-    token = cookie_token.split(" ")[1]
     try:
+        token = cookie_token.split(" ")[1]
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username = payload.get("sub")
         
-        print(f"Username from token: {username}")  # Add debug
+        print(f"Username from token: {username}")
         
         if not username:
             return None
         
         user_data = await get_user_by_username(username)
         
-        print(f"User data: {user_data}")  # Add debug
+        print(f"User data: {user_data}")
         
         if not user_data:
             return None
+        
+        # Properly convert ObjectId to string
+        if '_id' in user_data and not isinstance(user_data['_id'], str):
+            user_data['_id'] = str(user_data['_id'])
+        
+        # Convert the full dict to a User model
+        try:
+            user = User(**user_data)
+            print(f"Successfully created User model for {user.username}")
+            return user
+        except Exception as validation_error:
+            print(f"Error creating User model: {validation_error}")
+            print(f"user_data keys: {user_data.keys()}")
+            print(f"user_data _id type: {type(user_data.get('_id'))}")
+            return None
             
-        return User(**user_data)
     except Exception as e:
-        print(f"Error extracting user from cookie: {str(e)}")  # Add debug
+        print(f"Error extracting user from cookie: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return None
     
 async def get_user_from_token(token: str):
