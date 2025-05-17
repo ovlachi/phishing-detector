@@ -121,6 +121,9 @@ function initializeSingleUrlScanner() {
   const resultsContainer = document.getElementById("results-container");
   const loadingSpinner = document.getElementById("loading-spinner");
 
+  // Check if enhanced UI is available
+  const hasEnhancedUI = document.getElementById("result-card") !== null;
+
   // Check if we're on a page with the scanner
   if (!scanForm) return;
 
@@ -152,8 +155,16 @@ function initializeSingleUrlScanner() {
     // Show loading state
     if (scanButton) scanButton.disabled = true;
     if (loadingSpinner) loadingSpinner.style.display = "block";
+
+    // Hide previous results
     if (resultsContainer) resultsContainer.innerHTML = "";
     if (resultsSection) resultsSection.style.display = "block";
+
+    // If using enhanced UI, hide the result card while loading
+    if (hasEnhancedUI) {
+      const resultCard = document.getElementById("result-card");
+      if (resultCard) resultCard.style.display = "none";
+    }
 
     try {
       // Get authentication token if available
@@ -175,8 +186,19 @@ function initializeSingleUrlScanner() {
 
       const data = await response.json();
 
-      // Display results
-      displayResults(data);
+      // Log API response for debugging
+      console.log("API Response:", data);
+
+      // Check if we should use enhanced display or original display
+      if (hasEnhancedUI && typeof displayEnhancedResult === "function") {
+        console.log("Using enhanced display");
+        // Use enhanced UI display
+        displayEnhancedResult(data);
+      } else {
+        console.log("Using original display");
+        // Use original display
+        displayResults(data);
+      }
 
       // Show success message
       showMessage("URL scanned successfully", "success");
@@ -184,12 +206,27 @@ function initializeSingleUrlScanner() {
       console.error("Error scanning URL:", error);
       showMessage("An error occurred while scanning the URL", "error");
 
+      // Show error in original UI
       if (resultsContainer) {
         resultsContainer.innerHTML = `
                   <div class="error-message">
                       <p>${error.message || "An error occurred while scanning the URL"}</p>
                   </div>
               `;
+      }
+
+      // Show error in enhanced UI if available
+      if (hasEnhancedUI && typeof displayEnhancedResult === "function") {
+        try {
+          const errorData = {
+            url: url,
+            error: error.message || "An error occurred while scanning the URL",
+            threat_level: "unknown"
+          };
+          displayEnhancedResult(errorData);
+        } catch (displayError) {
+          console.error("Error displaying enhanced error:", displayError);
+        }
       }
     } finally {
       // Hide loading state
@@ -198,7 +235,6 @@ function initializeSingleUrlScanner() {
     }
   });
 }
-
 /**
  * Display single URL scan results with proper classification display
  */

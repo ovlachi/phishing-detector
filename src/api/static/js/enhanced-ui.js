@@ -11,6 +11,14 @@ window.batchResults = [];
  * @param {Object} result - Result from the API with enhanced fields
  */
 function displayEnhancedResult(result) {
+  console.log("displayEnhancedResult called with:", result);
+
+  // Check if necessary elements exist
+  if (!document.getElementById("result-card")) {
+    console.error("Error: result-card element not found!");
+    return;
+  }
+
   // Hide any existing results or loading indicators
   document.getElementById("loading-spinner").style.display = "none";
 
@@ -697,4 +705,5 @@ document.addEventListener("DOMContentLoaded", function () {
             */
     });
   }
+  console.log("Enhanced UI script loaded");
 });
