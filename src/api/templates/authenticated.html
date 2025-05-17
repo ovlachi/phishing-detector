@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="/src/api/static/css/styles.css" />
     <link rel="stylesheet" href="/src/api/static/css/responsive.css" />
     <link rel="stylesheet" href="/src/api/static/css/enhanced-ui.css" />
+    <link rel="stylesheet" href="/src/api/static/css/phishr_premium_button_styles.css" />
   </head>
   <body>
     <!-- Left Sidebar Navigation -->
@@ -19,7 +20,7 @@
       <nav class="sidebar-nav">
         <ul>
           <li><a href="/dashboard" class="active">Dashboard</a></li>
-          <li><a href="#features">Features</a></li>
+          <li><a href="#features">Premium Features</a></li>
           <li>
             <a href="#" class="coming-soon">Live Monitoring <span class="coming-soon-tag">COMING SOON</span></a>
           </li>
@@ -73,13 +74,6 @@
             <div class="result-score" id="result-score">--</div>
           </div>
 
-          <!-- Premium Features -->
-          <div class="premium-features">
-            <div class="premium-badge"><span class="badge-icon">✨</span> Enhanced Analysis</div>
-            <div class="premium-badge"><span class="badge-icon">🔒</span> Threat Intelligence</div>
-            <div class="premium-badge"><span class="badge-icon">📊</span> Confidence Metrics</div>
-          </div>
-
           <!-- Confidence Meter -->
           <div class="confidence-section">
             <div class="confidence-label">
@@ -112,7 +106,7 @@
           </div>
 
           <!-- Details Toggle -->
-          <button class="details-toggle" id="details-toggle" onclick="toggleDetails()">Show Detailed Analysis ▼</button>
+          <button class="details-toggle" id="details-toggle" style="display: block">Hide Detailed Analysis ▲</button>
 
           <!-- Details Panel -->
           <div class="details-panel hidden" id="details-panel">
@@ -136,6 +130,13 @@
             <div class="recommendation-section">
               <div class="recommendation-header">Recommendation</div>
               <div class="recommendation-text" id="recommendation-text">Scan a URL for analysis and recommendations.</div>
+            </div>
+
+            <!-- Premium Features -->
+            <div class="premium-features">
+              <div class="premium-badge"><span class="badge-icon">✨</span> Enhanced Analysis</div>
+              <div class="premium-badge"><span class="badge-icon">🔒</span> Threat Intelligence</div>
+              <div class="premium-badge"><span class="badge-icon">📊</span> Confidence Metrics</div>
             </div>
           </div>
         </div>
@@ -254,6 +255,8 @@
       <!-- Batch results section will be added dynamically via JavaScript -->
     </div>
     <script src="/src/api/static/js/enhanced-ui.js"></script>
+    <script src="/src/api/static/js/phishr_enhanced_ui_controller.js"></script>
+    <script src="/src/api/static/js/phishr_batch_scan.js"></script>
     <script src="/src/api/static/js/main.js"></script>
   </body>
 </html>

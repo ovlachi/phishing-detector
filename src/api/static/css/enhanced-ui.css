@@ -468,6 +468,245 @@
   filter: brightness(1.1);
 }
 
+/* Batch details container */
+.batch-details-container {
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  margin-top: 20px;
+  padding: 20px;
+  display: none; /* Hidden by default */
+}
+
+/* Back button */
+.back-to-results-btn {
+  background-color: #f3f4f6;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 12px;
+  margin-bottom: 20px;
+  font-size: 14px;
+  color: #4b5563;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  transition: background-color 0.2s;
+}
+
+.back-to-results-btn:hover {
+  background-color: #e5e7eb;
+}
+
+/* URL details card */
+.url-details-card {
+  background-color: #fff;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  padding: 20px;
+}
+
+/* URL header */
+.url-details-header {
+  font-size: 18px;
+  font-weight: 600;
+  margin-top: 0;
+  margin-bottom: 15px;
+  word-break: break-all;
+}
+
+/* Risk label */
+.risk-label {
+  display: inline-block;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 15px;
+}
+
+.risk-label.high {
+  background-color: #fee2e2;
+  color: #dc2626;
+}
+
+.risk-label.medium {
+  background-color: #ffedd5;
+  color: #ea580c;
+}
+
+.risk-label.low {
+  background-color: #dcfce7;
+  color: #16a34a;
+}
+
+/* Confidence section (copied from your existing styles) */
+.confidence-section {
+  margin: 15px 0;
+}
+
+.confidence-label {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 5px;
+  font-size: 14px;
+}
+
+.confidence-meter {
+  height: 8px;
+  background-color: #e5e7eb;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.confidence-fill {
+  height: 100%;
+  background-color: #3b82f6;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+/* Quick stats section */
+.quick-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 15px;
+  margin: 20px 0;
+}
+
+.stat-item {
+  background-color: #f9fafb;
+  border-radius: 6px;
+  padding: 12px;
+}
+
+.stat-label {
+  font-size: 13px;
+  color: #6b7280;
+  margin-bottom: 5px;
+}
+
+.stat-value {
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+}
+
+/* Detail sections */
+.detail-section {
+  margin-top: 25px;
+}
+
+.detail-header {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 15px;
+  color: #1f2937;
+}
+
+/* Threat sources */
+.threat-sources {
+  display: grid;
+  gap: 10px;
+}
+
+.threat-source {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  background-color: #f9fafb;
+  border-radius: 6px;
+}
+
+.source-name {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.source-status {
+  font-size: 14px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.source-status.safe {
+  background-color: #dcfce7;
+  color: #16a34a;
+}
+
+.source-status.suspicious {
+  background-color: #ffedd5;
+  color: #ea580c;
+}
+
+.source-status.malicious {
+  background-color: #fee2e2;
+  color: #dc2626;
+}
+
+/* Feature list */
+.feature-list {
+  display: grid;
+  gap: 10px;
+}
+
+.feature-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  background-color: #f9fafb;
+  border-radius: 6px;
+}
+
+.feature-name {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.feature-value {
+  font-size: 14px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.feature-value.safe {
+  background-color: #dcfce7;
+  color: #16a34a;
+}
+
+.feature-value.suspicious {
+  background-color: #ffedd5;
+  color: #ea580c;
+}
+
+.feature-value.malicious {
+  background-color: #fee2e2;
+  color: #dc2626;
+}
+
+/* Recommendation section */
+.recommendation-section {
+  margin-top: 25px;
+  background-color: #f0f9ff;
+  border-radius: 6px;
+  padding: 15px;
+  border-left: 4px solid #92400e;
+}
+
+.recommendation-header {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.recommendation-text {
+  font-size: 14px;
+  line-height: 1.5;
+}
+
 /* Hide classes */
 .hidden {
   display: none;
