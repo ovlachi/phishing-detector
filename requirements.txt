@@ -11,4 +11,5 @@ jinja2==3.1.2
 python-jose==3.3.0
 passlib==1.7.4
 pydantic==1.10.9
-tldextract==3.4.4
+tldextract>=3.6.0
+python-whois>=0.7.3
