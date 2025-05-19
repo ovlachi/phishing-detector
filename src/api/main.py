@@ -5,7 +5,7 @@ from fastapi.templating import Jinja2Templates
 from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel, AnyHttpUrl
 from datetime import datetime, timedelta
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Any
 import uvicorn
 import time
 import os
@@ -61,6 +61,7 @@ class UrlRequest(BaseModel):
 class BatchUrlRequest(BaseModel):
     urls: List[AnyHttpUrl]
 
+
 # Define response models
 class PredictionResult(BaseModel):
     url: str
@@ -68,6 +69,11 @@ class PredictionResult(BaseModel):
     class_name: Optional[str] = None
     probabilities: Optional[Dict[str, float]] = None
     error: Optional[str] = None
+    # New fields for enhanced prediction
+    threat_level: Optional[str] = None
+    final_confidence: Optional[float] = None
+    url_features: Optional[Dict[str, Any]] = None
+    url_confidence_score: Optional[float] = None
 
 class BatchPredictionResult(BaseModel):
     results: List[PredictionResult]
@@ -363,14 +369,15 @@ async def api_classify_url(request: UrlRequest, request_obj: Request):
         url = str(request.url)
         print(f"Processing URL: {url}")  # Debug output
         
+        # Use the enhanced classify_url function
         result = classify_url(url, classifier, pipeline)
         
         # Try to save to scan history if user is logged in
         token = request_obj.cookies.get("access_token")
         if token:
             user = await get_user_from_cookie(token)
-            if user and 'error' not in result:
-                # Create scan history entry
+            if user:
+                # Create scan history entry with enhanced fields
                 scan_entry = {
                     "user_id": str(user.id),
                     "url": url,
@@ -378,21 +385,34 @@ async def api_classify_url(request: UrlRequest, request_obj: Request):
                     "classification": result.get('class', 'Unknown'),
                     "probabilities": result.get('probabilities'),
                     "timestamp": datetime.utcnow(),
-                    "source": "Single Scan"
+                    "source": "Single Scan",
+                    # Add new enhanced fields to history
+                    "threat_level": result.get('threat_level'),
+                    "final_confidence": result.get('final_confidence'),
+                    "url_features": result.get('url_features')
                 }
                 await add_scan_record(scan_entry)
         
+        # Return appropriate response including enhanced fields
         if 'error' in result:
+            # Even with error, return URL-based analysis if available
             return PredictionResult(
                 url=url,
-                error=result['error']
+                error=result['error'],
+                threat_level=result.get('threat_level'),
+                url_features=result.get('url_features'),
+                url_confidence_score=result.get('url_confidence_score', 0)
             )
         else:
+            # Return complete enhanced result
             return PredictionResult(
                 url=url,
                 class_id=result['class_id'],
                 class_name=result['class'],
-                probabilities=result['probabilities']
+                probabilities=result['probabilities'],
+                threat_level=result.get('threat_level'),
+                final_confidence=result.get('final_confidence'),
+                url_features=result.get('url_features')
             )
     except Exception as e:
         traceback.print_exc()  # Print the full error
@@ -441,40 +461,51 @@ async def api_classify_batch(
         urls = [str(url) for url in request.urls]
         print(f"Processing {len(urls)} URLs in batch")
         
-        # Classify URLs
+        # Classify URLs using enhanced batch function
         start_time = time.time()
         results = classify_batch(urls, classifier, pipeline)
         processing_time = time.time() - start_time
         
         # Save results to scan history
         for result in results:
-            if 'error' not in result:
-                # Create scan history entry
-                scan_entry = {
-                    "user_id": str(user.id),
-                    "url": result['url'],
-                    "disposition": result.get('class', 'Unknown'),
-                    "classification": result.get('class', 'Unknown'),
-                    "probabilities": result.get('probabilities'),
-                    "timestamp": datetime.utcnow(),
-                    "source": "Batch Scan"
-                }
-                await add_scan_record(scan_entry)
+            # Create scan history entry with enhanced fields for all results
+            scan_entry = {
+                "user_id": str(user.id),
+                "url": result['url'],
+                "disposition": result.get('class', 'Unknown'),
+                "classification": result.get('class', 'Unknown'),
+                "probabilities": result.get('probabilities'),
+                "timestamp": datetime.utcnow(),
+                "source": "Batch Scan",
+                # Add new enhanced fields to history
+                "threat_level": result.get('threat_level'),
+                "final_confidence": result.get('final_confidence'),
+                "url_features": result.get('url_features')
+            }
+            await add_scan_record(scan_entry)
         
-        # Format response
+        # Format response including enhanced fields
         response_results = []
         for result in results:
             if 'error' in result and result['error']:
+                # Even with error, include URL-based analysis
                 response_results.append(PredictionResult(
                     url=result['url'],
-                    error=result['error']
+                    error=result['error'],
+                    threat_level=result.get('threat_level'),
+                    url_features=result.get('url_features'),
+                    url_confidence_score=result.get('url_confidence_score', 0)
                 ))
             else:
+                # Include all enhanced fields
                 response_results.append(PredictionResult(
                     url=result['url'],
                     class_id=result['class_id'],
                     class_name=result['class'],
-                    probabilities=result['probabilities']
+                    probabilities=result['probabilities'],
+                    threat_level=result.get('threat_level'),
+                    final_confidence=result.get('final_confidence'),
+                    url_features=result.get('url_features')
                 ))
         
         return BatchPredictionResult(
@@ -484,8 +515,6 @@ async def api_classify_batch(
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Error processing batch: {str(e)}")
-
-
 
 # Get scan history for current user with better error handling
 @app.get("/scan-history")

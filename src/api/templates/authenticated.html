@@ -7,6 +7,8 @@
     <link rel="stylesheet" href="/src/api/static/css/normalize.css" />
     <link rel="stylesheet" href="/src/api/static/css/styles.css" />
     <link rel="stylesheet" href="/src/api/static/css/responsive.css" />
+    <link rel="stylesheet" href="/src/api/static/css/enhanced-ui.css" />
+    <link rel="stylesheet" href="/src/api/static/css/phishr_premium_button_styles.css" />
   </head>
   <body>
     <!-- Left Sidebar Navigation -->
@@ -18,7 +20,7 @@
       <nav class="sidebar-nav">
         <ul>
           <li><a href="/dashboard" class="active">Dashboard</a></li>
-          <li><a href="#features">Features</a></li>
+          <li><a href="#features">Premium Features</a></li>
           <li>
             <a href="#" class="coming-soon">Live Monitoring <span class="coming-soon-tag">COMING SOON</span></a>
           </li>
@@ -52,8 +54,91 @@
           <div class="spinner"></div>
           <p>Analyzing URL...</p>
         </div>
-        <div id="results-container" class="results-container">
-          <!-- Results will be displayed here dynamically -->
+        <!-- Original Results Container - Keep for backward compatibility -->
+        <div id="results-container" class="results-container hidden">
+          <!-- Original results will be displayed here for backward compatibility -->
+        </div>
+
+        <!-- Enhanced Result Card -->
+        <div class="result-card hidden" id="result-card">
+          <div class="result-header">
+            <div class="result-icon" id="result-icon">🔍</div>
+            <div class="result-info">
+              <h2 class="result-title" id="result-title">Scan a URL to see results</h2>
+              <div class="result-url" id="result-url"></div>
+              <div class="result-badges">
+                <span class="threat-badge badge-analyzing" id="threat-badge">READY</span>
+                <span class="threat-badge" id="confidence-badge" style="display: none">CONFIDENCE</span>
+              </div>
+            </div>
+            <div class="result-score" id="result-score">--</div>
+          </div>
+
+          <!-- Confidence Meter -->
+          <div class="confidence-section">
+            <div class="confidence-label">
+              <span>Confidence Level</span>
+              <span id="confidence-text">--</span>
+            </div>
+            <div class="confidence-meter">
+              <div class="confidence-fill" id="confidence-fill"></div>
+            </div>
+          </div>
+
+          <!-- Quick Stats -->
+          <div class="quick-stats">
+            <div class="stat-item">
+              <div class="stat-label">ML Prediction</div>
+              <div class="stat-value" id="ml-prediction">--</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">Threat Intel</div>
+              <div class="stat-value" id="threat-intel">--</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">URL Analysis</div>
+              <div class="stat-value" id="url-analysis">--</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">Domain Age</div>
+              <div class="stat-value" id="domain-age">--</div>
+            </div>
+          </div>
+
+          <!-- Details Toggle -->
+          <button class="details-toggle" id="details-toggle" style="display: block">Hide Detailed Analysis ▲</button>
+
+          <!-- Details Panel -->
+          <div class="details-panel hidden" id="details-panel">
+            <!-- Threat Intelligence Sources -->
+            <div class="detail-section">
+              <h3 class="detail-header">Threat Intelligence Sources</h3>
+              <div class="threat-sources" id="threat-sources">
+                <!-- Dynamically populated -->
+              </div>
+            </div>
+
+            <!-- URL Features -->
+            <div class="detail-section">
+              <h3 class="detail-header">URL Features</h3>
+              <div class="feature-list" id="feature-list">
+                <!-- Dynamically populated -->
+              </div>
+            </div>
+
+            <!-- Recommendation -->
+            <div class="recommendation-section">
+              <div class="recommendation-header">Recommendation</div>
+              <div class="recommendation-text" id="recommendation-text">Scan a URL for analysis and recommendations.</div>
+            </div>
+
+            <!-- Premium Features -->
+            <div class="premium-features">
+              <div class="premium-badge"><span class="badge-icon">✨</span> Enhanced Analysis</div>
+              <div class="premium-badge"><span class="badge-icon">🔒</span> Threat Intelligence</div>
+              <div class="premium-badge"><span class="badge-icon">📊</span> Confidence Metrics</div>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -80,6 +165,57 @@
           </form>
         </div>
       </section>
+
+      <!-- Batch Results Dashboard -->
+      <div class="batch-dashboard hidden" id="batch-dashboard">
+        <div class="dashboard-header">
+          <h2 class="dashboard-title">Batch Analysis Results</h2>
+          <div class="dashboard-controls">
+            <select class="dashboard-select" id="risk-filter" onchange="filterBatchResults()">
+              <option value="all">All Results</option>
+              <option value="high">High Risk Only</option>
+              <option value="medium">Medium Risk Only</option>
+              <option value="safe">Safe URLs</option>
+            </select>
+            <select class="dashboard-select" id="sort-by" onchange="sortBatchResults()">
+              <option value="risk">Sort by Risk</option>
+              <option value="confidence">Sort by Confidence</option>
+              <option value="url">Sort by URL</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Summary Statistics -->
+        <div class="summary-stats">
+          <div class="summary-stat">
+            <div class="stat-number" id="total-urls">0</div>
+            <div class="stat-description">Total URLs</div>
+          </div>
+          <div class="summary-stat">
+            <div class="stat-number" style="color: #dc2626" id="high-risk">0</div>
+            <div class="stat-description">High Risk</div>
+          </div>
+          <div class="summary-stat">
+            <div class="stat-number" style="color: #ea580c" id="medium-risk">0</div>
+            <div class="stat-description">Medium Risk</div>
+          </div>
+          <div class="summary-stat">
+            <div class="stat-number" style="color: #16a34a" id="safe-urls">0</div>
+            <div class="stat-description">Safe</div>
+          </div>
+        </div>
+
+        <!-- Batch Results List -->
+        <div class="batch-results" id="batch-results">
+          <!-- Dynamically populated -->
+        </div>
+
+        <!-- Batch Action Buttons -->
+        <div class="batch-actions">
+          <button class="export-button" onclick="exportResults()">Export Results (CSV)</button>
+          <button class="save-all-button" onclick="saveAllResults()">Save All Results</button>
+        </div>
+      </div>
 
       <!-- Scan History Section -->
       <section class="scan-history-section">
@@ -118,7 +254,9 @@
 
       <!-- Batch results section will be added dynamically via JavaScript -->
     </div>
-
+    <script src="/src/api/static/js/enhanced-ui.js"></script>
+    <script src="/src/api/static/js/phishr_enhanced_ui_controller.js"></script>
+    <script src="/src/api/static/js/phishr_batch_scan.js"></script>
     <script src="/src/api/static/js/main.js"></script>
   </body>
 </html>

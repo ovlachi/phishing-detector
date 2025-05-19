@@ -121,6 +121,9 @@ function initializeSingleUrlScanner() {
   const resultsContainer = document.getElementById("results-container");
   const loadingSpinner = document.getElementById("loading-spinner");
 
+  // Check if enhanced UI is available
+  const hasEnhancedUI = document.getElementById("result-card") !== null;
+
   // Check if we're on a page with the scanner
   if (!scanForm) return;
 
@@ -152,8 +155,16 @@ function initializeSingleUrlScanner() {
     // Show loading state
     if (scanButton) scanButton.disabled = true;
     if (loadingSpinner) loadingSpinner.style.display = "block";
+
+    // Hide previous results
     if (resultsContainer) resultsContainer.innerHTML = "";
     if (resultsSection) resultsSection.style.display = "block";
+
+    // If using enhanced UI, hide the result card while loading
+    if (hasEnhancedUI) {
+      const resultCard = document.getElementById("result-card");
+      if (resultCard) resultCard.style.display = "none";
+    }
 
     try {
       // Get authentication token if available
@@ -175,8 +186,19 @@ function initializeSingleUrlScanner() {
 
       const data = await response.json();
 
-      // Display results
-      displayResults(data);
+      // Log API response for debugging
+      console.log("API Response:", data);
+
+      // Check if we should use enhanced display or original display
+      if (hasEnhancedUI && typeof displayEnhancedResult === "function") {
+        console.log("Using enhanced display");
+        // Use enhanced UI display
+        displayEnhancedResult(data);
+      } else {
+        console.log("Using original display");
+        // Use original display
+        displayResults(data);
+      }
 
       // Show success message
       showMessage("URL scanned successfully", "success");
@@ -184,12 +206,27 @@ function initializeSingleUrlScanner() {
       console.error("Error scanning URL:", error);
       showMessage("An error occurred while scanning the URL", "error");
 
+      // Show error in original UI
       if (resultsContainer) {
         resultsContainer.innerHTML = `
                   <div class="error-message">
                       <p>${error.message || "An error occurred while scanning the URL"}</p>
                   </div>
               `;
+      }
+
+      // Show error in enhanced UI if available
+      if (hasEnhancedUI && typeof displayEnhancedResult === "function") {
+        try {
+          const errorData = {
+            url: url,
+            error: error.message || "An error occurred while scanning the URL",
+            threat_level: "unknown"
+          };
+          displayEnhancedResult(errorData);
+        } catch (displayError) {
+          console.error("Error displaying enhanced error:", displayError);
+        }
       }
     } finally {
       // Hide loading state
@@ -198,7 +235,6 @@ function initializeSingleUrlScanner() {
     }
   });
 }
-
 /**
  * Display single URL scan results with proper classification display
  */
@@ -404,7 +440,7 @@ function createProbabilityBars(probabilities) {
 // ====== BATCH URL SCANNER ======
 
 /**
- * Initialize the batch URL scanner
+ * Initialize the batch URL scanner with enhanced UI support
  */
 function initializeBatchUrlScanner() {
   const batchScanForm = document.getElementById("batch-scan-form");
@@ -415,6 +451,10 @@ function initializeBatchUrlScanner() {
 
   // Check if we're on a page with the batch scanner
   if (!batchScanForm) return;
+
+  // Check if enhanced UI is available (batch dashboard exists)
+  const hasEnhancedUI = document.getElementById("batch-dashboard") !== null;
+  const loadingSpinner = document.getElementById("loading-spinner");
 
   // Update URL count in batch textarea label
   function updateUrlCount() {
@@ -486,6 +526,18 @@ function initializeBatchUrlScanner() {
       batchScanButton.disabled = true;
       batchScanButton.textContent = "Scanning...";
 
+      // If using enhanced UI, show loading spinner
+      if (hasEnhancedUI && loadingSpinner) {
+        loadingSpinner.style.display = "block";
+
+        // Hide any existing results
+        const resultCard = document.getElementById("result-card");
+        if (resultCard) resultCard.style.display = "none";
+
+        const batchDashboard = document.getElementById("batch-dashboard");
+        if (batchDashboard) batchDashboard.style.display = "none";
+      }
+
       try {
         // Get the token from cookies
         const token = getCookie("access_token");
@@ -532,6 +584,9 @@ function initializeBatchUrlScanner() {
         const data = await response.json();
         console.log("Batch scan data received:", data);
 
+        // Process results - this function now handles both UIs
+        processBatchResults(data.results);
+
         // Show success message
         showMessage("Batch scan completed successfully", "success");
 
@@ -550,6 +605,11 @@ function initializeBatchUrlScanner() {
         // Reset button state
         batchScanButton.disabled = false;
         batchScanButton.textContent = "SCAN";
+
+        // Hide loading spinner if using enhanced UI
+        if (hasEnhancedUI && loadingSpinner) {
+          loadingSpinner.style.display = "none";
+        }
       }
     });
   }
@@ -570,6 +630,23 @@ function initializeBatchUrlScanner() {
         return;
       }
 
+      // Disable button and show loading state
+      const submitButton = csvUploadForm.querySelector("button");
+      submitButton.disabled = true;
+      submitButton.textContent = "Scanning...";
+
+      // If using enhanced UI, show loading spinner
+      if (hasEnhancedUI && loadingSpinner) {
+        loadingSpinner.style.display = "block";
+
+        // Hide any existing results
+        const resultCard = document.getElementById("result-card");
+        if (resultCard) resultCard.style.display = "none";
+
+        const batchDashboard = document.getElementById("batch-dashboard");
+        if (batchDashboard) batchDashboard.style.display = "none";
+      }
+
       // Read file
       const reader = new FileReader();
       reader.onload = async (event) => {
@@ -582,6 +659,16 @@ function initializeBatchUrlScanner() {
 
         if (urls.length === 0) {
           showMessage("No URLs found in the CSV file", "error");
+
+          // Reset button state
+          submitButton.disabled = false;
+          submitButton.textContent = "Upload & Scan";
+
+          // Hide loading spinner
+          if (hasEnhancedUI && loadingSpinner) {
+            loadingSpinner.style.display = "none";
+          }
+
           return;
         }
 
@@ -597,12 +684,18 @@ function initializeBatchUrlScanner() {
 
         if (invalidUrls.length > 0) {
           showMessage(`The following URLs in the CSV are invalid:\n${invalidUrls.join("\n")}\n\nPlease fix them and try again.`, "error");
+
+          // Reset button state
+          submitButton.disabled = false;
+          submitButton.textContent = "Upload & Scan";
+
+          // Hide loading spinner
+          if (hasEnhancedUI && loadingSpinner) {
+            loadingSpinner.style.display = "none";
+          }
+
           return;
         }
-
-        const submitButton = csvUploadForm.querySelector("button");
-        submitButton.disabled = true;
-        submitButton.textContent = "Scanning...";
 
         try {
           // Get the token from cookies
@@ -628,7 +721,7 @@ function initializeBatchUrlScanner() {
 
           const data = await response.json();
 
-          // Process and display results
+          // Process and display results - works with both UIs
           processBatchResults(data.results);
 
           // Show success message
@@ -648,6 +741,11 @@ function initializeBatchUrlScanner() {
           // Reset button state
           submitButton.disabled = false;
           submitButton.textContent = "Upload & Scan";
+
+          // Hide loading spinner if using enhanced UI
+          if (hasEnhancedUI && loadingSpinner) {
+            loadingSpinner.style.display = "none";
+          }
         }
       };
 
@@ -657,9 +755,19 @@ function initializeBatchUrlScanner() {
 }
 
 /**
- * Process and display batch scan results
+ * Process and display batch scan results with enhanced UI
  */
 function processBatchResults(results) {
+  // Check if enhanced UI elements exist
+  const batchDashboard = document.getElementById("batch-dashboard");
+
+  if (batchDashboard) {
+    // Use enhanced UI if the dashboard element exists
+    displayBatchResults(results);
+    return;
+  }
+
+  // Otherwise, use the original implementation
   // Create a results section if it doesn't exist
   let resultsSection = document.getElementById("batch-results-section");
 
