@@ -603,7 +603,7 @@ def create_dummy_scan_history(user_id):
     ]
     
     history = []
-    now = datetime.utcnow()
+    now = datetime.utcnow() # Use UTC time for consistency
     
     for i, url in enumerate(dummy_urls):
         entry = {
