@@ -23,23 +23,6 @@ database = client[DB_NAME]
 users_collection = database.users
 scan_history_collection = database.scan_history
 
-# Helper for handling MongoDB ObjectId conversion to string
-class PyObjectId(ObjectId):
-    @classmethod
-    def __get_validators__(cls):
-        yield cls.validate
-
-    @classmethod
-    def validate(cls, v):
-        if not ObjectId.is_valid(v):
-            raise ValueError("Invalid ObjectId")
-        return ObjectId(v)
-
-    @classmethod
-    def __modify_schema__(cls, field_schema):
-        field_schema.update(type="string")
-
-
 # Database operations
 async def add_user(user_data: Dict[str, Any]) -> str:
     """Add a new user to the database"""
@@ -111,9 +94,17 @@ async def get_user_scan_history(user_id: str) -> List[Dict[str, Any]]:
 # Initialize the database (create indexes)
 async def init_db():
     """Initialize database indexes"""
+    print("Initializing database...")
+    
     # Create unique indexes on username and email
     await users_collection.create_index("username", unique=True)
     await users_collection.create_index("email", unique=True)
     
     # Create index on user_id and timestamp for scan history
     await scan_history_collection.create_index([("user_id", 1), ("timestamp", -1)])
+    
+    # Defer the admin user creation to avoid circular imports
+    from src.api.auth import create_admin_user
+    await create_admin_user()
+    
+    print("Database initialization complete")

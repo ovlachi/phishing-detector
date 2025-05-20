@@ -7,7 +7,7 @@ from datetime import datetime
 import re
 from bson import ObjectId
 
-from src.api.database import PyObjectId
+from src.api.utils import PyObjectId
 
 
 class UserBase(BaseModel):
@@ -89,8 +89,31 @@ class ScanHistoryEntry(BaseModel):
     timestamp: datetime = Field(default_factory=datetime.utcnow)
     source: str = "Single Scan"
     brand: Optional[str] = "Unknown"
+
+class UserUpdateRequest(BaseModel):
+    """Model for user update requests"""
+    username: Optional[str] = None
+    email: Optional[str] = None
+    password: Optional[str] = None
+    full_name: Optional[str] = None
+    premium: Optional[bool] = None
+    is_active: Optional[bool] = None
+    is_admin: Optional[bool] = None
+
+class UserResponse(BaseModel):
+    """Model for user responses"""
+    id: str = Field(..., alias="_id")
+    username: str
+    email: str
+    full_name: Optional[str] = None
+    created_at: Optional[datetime] = None
+    last_login: Optional[datetime] = None
+    premium: bool = False
+    is_active: bool = True
+    is_admin: bool = False
     
     class Config:
         allow_population_by_field_name = True
-        arbitrary_types_allowed = True
-        json_encoders = {ObjectId: str}
+        json_encoders = {
+            datetime: lambda dt: dt.isoformat() if dt else None
+        }

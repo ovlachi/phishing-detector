@@ -622,3 +622,29 @@ def create_dummy_scan_history(user_id):
     
     print(f"Created {len(history)} dummy history entries")
     return history
+
+# Import the admin router
+from .admin import router as admin_router
+
+# Add the admin router to the app
+app.include_router(admin_router, prefix="/api")
+
+# Import get_current_user dependency
+from src.api.auth import get_current_user
+
+# Add admin page route
+@app.get("/admin", response_class=HTMLResponse)
+async def admin_page(request: Request, current_user: dict = Depends(get_current_user)):
+    """Admin dashboard page"""
+    # Check if user is admin
+    if not current_user.get("is_admin", False):
+        return RedirectResponse(url="/login?error=unauthorized")
+    
+    return templates.TemplateResponse("admin/admin.html", {"request": request, "user": current_user})
+
+# Add admin authentication check endpoint
+@app.get("/api/admin/check-auth")
+async def check_admin_auth(current_user: dict = Depends(get_current_user)):
+    """Check if the current user has admin privileges"""
+    is_admin = current_user.get("is_admin", False)
+    return {"authenticated": True, "is_admin": is_admin}
