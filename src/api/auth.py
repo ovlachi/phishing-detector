@@ -163,6 +163,7 @@ async def get_user_from_token(token: str):
     """Extract user from auth header token"""
     print(f"get_user_from_token called with token: {token[:15]}...")
     
+    
     # Remove any quotes from the token
     if token and token.startswith('"') and token.endswith('"'):
         token = token[1:-1]  # Remove surrounding quotes
@@ -200,6 +201,9 @@ async def get_user_from_token(token: str):
             print("Converted ObjectId to string")
         
         print("Creating User model from user_data")
+        print(f"User data before User creation: {user_data}")
+        print(f"User data contains is_admin: {'is_admin' in user_data}")
+        print(f"User data is_admin value: {user_data.get('is_admin')}")
         from src.api.models import User
         user = User(**user_data)
         print(f"Created User model with username: {user.username}, id: {user.id}")

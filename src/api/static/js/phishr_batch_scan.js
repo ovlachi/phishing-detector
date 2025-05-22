@@ -31,7 +31,7 @@ function showBatchDetails(index) {
   }
 
   // Get the batch results data
-  const resultsData = window.batchResultsData || [];
+  const resultsData = window.batchResults || window.batchResultsData || [];
 
   // Check if we have data for this index
   if (!resultsData[index]) {
@@ -115,11 +115,24 @@ function showBatchDetails(index) {
   quickStats.className = "quick-stats";
 
   // Add stats if available in your data structure
+  // With this updated version:
   const statItems = [
-    { label: "ML Prediction", value: urlData.mlPrediction || "--" },
-    { label: "Threat Intel", value: urlData.threatIntel || "--" },
-    { label: "URL Analysis", value: urlData.urlAnalysis || "--" },
-    { label: "Domain Age", value: urlData.domainAge || "--" }
+    {
+      label: "ML Prediction",
+      value: urlData.error ? "Failed to analyze" : urlData.class_name || "Unknown"
+    },
+    {
+      label: "Threat Intel",
+      value: urlData.threat_level ? `${urlData.threat_level} risk` : "--"
+    },
+    {
+      label: "URL Analysis",
+      value: urlData.url_features ? "Analyzed" : "--"
+    },
+    {
+      label: "Domain Age",
+      value: urlData.url_features?.domain_age_days ? (urlData.url_features.domain_age_days < 30 ? `${urlData.url_features.domain_age_days} days` : "Established") : "--"
+    }
   ];
 
   statItems.forEach((stat) => {
@@ -219,7 +232,7 @@ function showBatchDetails(index) {
 
   const recommendationText = document.createElement("div");
   recommendationText.className = "recommendation-text";
-  recommendationText.textContent = urlData.recommendation || "No recommendation available.";
+  recommendationText.textContent = urlData.error ? "UNKNOWN: Could not fully analyze this URL. Proceed with caution." : urlData.threat_level === "low" ? "This URL appears to be safe based on available analysis." : "Exercise caution with this URL.";
 
   recommendationSection.appendChild(recommendationHeader);
   recommendationSection.appendChild(recommendationText);
@@ -245,17 +258,17 @@ function initializeBatchScanHandlers() {
   console.log("Initializing batch scan handlers");
 
   document.addEventListener("DOMContentLoaded", function () {
-    // Set up the batch scan form
-    const batchScanForm = document.getElementById("batch-scan-form");
-    if (batchScanForm) {
-      batchScanForm.addEventListener("submit", function (e) {
-        e.preventDefault();
-        const batchUrlInput = document.getElementById("batch-url-input");
-        if (batchUrlInput && batchUrlInput.value) {
-          processBatchScan(batchUrlInput.value);
-        }
-      });
-    }
+    // // Set up the batch scan form
+    // const batchScanForm = document.getElementById("batch-scan-form");
+    // if (batchScanForm) {
+    //   batchScanForm.addEventListener("submit", function (e) {
+    //     e.preventDefault();
+    //     const batchUrlInput = document.getElementById("batch-url-input");
+    //     if (batchUrlInput && batchUrlInput.value) {
+    //       processBatchScan(batchUrlInput.value);
+    //     }
+    //   });
+    // }
 
     // Set up the CSV upload form
     const csvUploadForm = document.getElementById("csv-upload-form");
@@ -287,65 +300,65 @@ function initializeBatchScanHandlers() {
  *
  * @param {string} urlsText - Text containing URLs (one per line)
  */
-function processBatchScan(urlsText) {
-  console.log("Processing batch scan");
+// function processBatchScan(urlsText) {
+//   console.log("Processing batch scan");
 
-  // Split text into URLs
-  const urls = urlsText
-    .split("\n")
-    .map((url) => url.trim())
-    .filter((url) => url && url.length > 0);
+//   // Split text into URLs
+//   const urls = urlsText
+//     .split("\n")
+//     .map((url) => url.trim())
+//     .filter((url) => url && url.length > 0);
 
-  if (urls.length === 0) {
-    alert("Please enter at least one URL to scan");
-    return;
-  }
+//   if (urls.length === 0) {
+//     alert("Please enter at least one URL to scan");
+//     return;
+//   }
 
-  // Show loading indicator
-  // TODO: Add a loading spinner or progress indicator
+//   // Show loading indicator
+//   // TODO: Add a loading spinner or progress indicator
 
-  // Simulate API call
-  setTimeout(function () {
-    // Generate sample results (replace with actual API call)
-    const results = urls.map((url) => ({
-      url: url,
-      risk: ["High", "Medium", "Low"][Math.floor(Math.random() * 3)],
-      confidence: Math.floor(Math.random() * 40) + 60, // 60-99
-      mlPrediction: Math.random() > 0.3 ? "Legitimate" : "Suspicious",
-      threatIntel: Math.random() > 0.3 ? "No threats" : "Some signals",
-      urlAnalysis: Math.random() > 0.3 ? "Normal" : "Unusual patterns",
-      domainAge: ["2 days", "6 months", "1+ year", "5+ years"][Math.floor(Math.random() * 4)],
-      threatSources: [
-        {
-          name: "VirusTotal",
-          status: Math.random() > 0.3 ? "safe" : "suspicious",
-          statusText: Math.random() > 0.3 ? "Clean" : "Suspicious"
-        },
-        {
-          name: "Google Safe Browsing",
-          status: Math.random() > 0.4 ? "safe" : "malicious",
-          statusText: Math.random() > 0.4 ? "No threats" : "Malicious"
-        }
-      ],
-      features: [
-        {
-          name: "Domain Age",
-          status: Math.random() > 0.3 ? "safe" : "suspicious",
-          value: Math.random() > 0.3 ? "5+ years" : "2 months"
-        },
-        {
-          name: "SSL Certificate",
-          status: Math.random() > 0.3 ? "safe" : "suspicious",
-          value: Math.random() > 0.3 ? "Valid (EV)" : "Self-signed"
-        }
-      ],
-      recommendation: Math.random() > 0.3 ? "This URL appears to be safe. You can proceed with confidence." : "Exercise caution with this URL. Several suspicious patterns were detected."
-    }));
+//   // Simulate API call
+//   setTimeout(function () {
+//     // Generate sample results (replace with actual API call)
+//     const results = urls.map((url) => ({
+//       url: url,
+//       risk: ["High", "Medium", "Low"][Math.floor(Math.random() * 3)],
+//       confidence: Math.floor(Math.random() * 40) + 60, // 60-99
+//       mlPrediction: Math.random() > 0.3 ? "Legitimate" : "Suspicious",
+//       threatIntel: Math.random() > 0.3 ? "No threats" : "Some signals",
+//       urlAnalysis: Math.random() > 0.3 ? "Normal" : "Unusual patterns",
+//       domainAge: ["2 days", "6 months", "1+ year", "5+ years"][Math.floor(Math.random() * 4)],
+//       threatSources: [
+//         {
+//           name: "VirusTotal",
+//           status: Math.random() > 0.3 ? "safe" : "suspicious",
+//           statusText: Math.random() > 0.3 ? "Clean" : "Suspicious"
+//         },
+//         {
+//           name: "Google Safe Browsing",
+//           status: Math.random() > 0.4 ? "safe" : "malicious",
+//           statusText: Math.random() > 0.4 ? "No threats" : "Malicious"
+//         }
+//       ],
+//       features: [
+//         {
+//           name: "Domain Age",
+//           status: Math.random() > 0.3 ? "safe" : "suspicious",
+//           value: Math.random() > 0.3 ? "5+ years" : "2 months"
+//         },
+//         {
+//           name: "SSL Certificate",
+//           status: Math.random() > 0.3 ? "safe" : "suspicious",
+//           value: Math.random() > 0.3 ? "Valid (EV)" : "Self-signed"
+//         }
+//       ],
+//       recommendation: Math.random() > 0.3 ? "This URL appears to be safe. You can proceed with confidence." : "Exercise caution with this URL. Several suspicious patterns were detected."
+//     }));
 
-    // Update the UI with results
-    initializeBatchResults(results);
-  }, 2000);
-}
+//     // Update the UI with results
+//     initializeBatchResults(results);
+//   }, 2000);
+// }
 
 /**
  * Process CSV upload
@@ -538,6 +551,8 @@ function initializeBatchResults(resultsData) {
  */
 
 function updateBatchSummary(resultsData) {
+  console.log("=== phishr_batch_scan.js updateBatchSummary called ===");
+  console.log("ResultsData:", resultsData);
   console.log("Updating batch summary stats with data:", resultsData);
 
   // Count risk levels

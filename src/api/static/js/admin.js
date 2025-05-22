@@ -25,8 +25,48 @@ const state = {
   }
 };
 
+// Define fetchWithAuth at the global scope so it can be used everywhere
+function fetchWithAuth(url, options = {}) {
+  // Get token from cookie
+  const getCookie = (name) => {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(";").shift();
+    return null;
+  };
+
+  const token = getCookie("access_token");
+  console.log(`Fetching ${url} with token: ${token ? token.substring(0, 20) + "..." : "missing"}`);
+
+  // Set up headers with authentication
+  const headers = {
+    "Content-Type": "application/json",
+    ...(options.headers || {})
+  };
+
+  // Add Authorization header if token exists
+  if (token) {
+    headers["Authorization"] = token;
+    console.log("Added Authorization header");
+  } else {
+    console.warn("No token found in cookies!");
+  }
+
+  console.log("Request headers:", headers);
+
+  // Return the fetch with auth headers
+  return fetch(url, {
+    ...options,
+    headers,
+    credentials: "include" // Important: include credentials to send cookies
+  });
+}
+
 // Initialize when DOM is loaded
 document.addEventListener("DOMContentLoaded", function () {
+  //Test check authentication
+  testAuth().then((result) => console.log("Auth test result:", result));
+
   // Check authentication
   checkAuth()
     .then((isAuthenticated) => {
@@ -55,19 +95,25 @@ document.addEventListener("DOMContentLoaded", function () {
  */
 async function checkAuth() {
   try {
-    const response = await fetch("/api/admin/check-auth", {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      credentials: "include"
+    // Use fetchWithAuth for consistency
+    const response = await fetchWithAuth("/api/admin/check-auth", {
+      method: "GET"
     });
 
+    console.log("Auth check response:", response.status);
+
     if (!response.ok) {
+      console.error("Auth check failed with status:", response.status);
       return false;
     }
 
     const data = await response.json();
+    console.log("Auth check data:", data);
+
+    if (!data.is_admin) {
+      console.error("User is not an admin:", data.username);
+    }
+
     return data.authenticated && data.is_admin;
   } catch (error) {
     console.error("Auth check error:", error);
@@ -180,12 +226,9 @@ function setupEventListeners() {
  */
 async function loadDashboardData() {
   try {
-    const response = await fetch("/api/admin/dashboard", {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      credentials: "include"
+    // Change this fetch call
+    const response = await fetchWithAuth("/api/admin/dashboard", {
+      method: "GET"
     });
 
     if (!response.ok) {
@@ -214,12 +257,8 @@ async function loadDashboardData() {
  */
 async function loadUserGrowthChart() {
   try {
-    const response = await fetch("/api/admin/users/analytics", {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      credentials: "include"
+    const response = await fetchWithAuth("/api/admin/users/analytics", {
+      method: "GET"
     });
 
     if (!response.ok) {
@@ -280,13 +319,45 @@ function loadScanResultsChart(riskDistribution) {
   const labels = riskDistribution.map((item) => item._id || "Unknown");
   const data = riskDistribution.map((item) => item.count);
 
-  // Determine colors based on risk level
+  // Updated color mapping
   const backgroundColors = labels.map((label) => {
     const lowerLabel = (label || "").toLowerCase();
-    if (lowerLabel.includes("high")) return "rgba(220, 38, 38, 0.8)";
-    if (lowerLabel.includes("medium")) return "rgba(234, 88, 12, 0.8)";
-    if (lowerLabel.includes("low")) return "rgba(22, 163, 74, 0.8)";
-    return "rgba(107, 114, 128, 0.8)";
+
+    if (lowerLabel.includes("legitimate") || lowerLabel.includes("clean") || lowerLabel.includes("safe")) {
+      return "rgba(22, 163, 74, 0.8)"; // Green for Legitimate
+    }
+    if (lowerLabel.includes("credential phishing") || lowerLabel.includes("phishing")) {
+      return "rgba(234, 88, 12, 0.8)"; // Orange for Credential Phishing
+    }
+    if (lowerLabel.includes("malware distribution") || lowerLabel.includes("malware")) {
+      return "rgba(220, 38, 38, 0.8)"; // Red for Malware Distribution
+    }
+    if (lowerLabel.includes("suspicious") || lowerLabel.includes("unknown")) {
+      // Added "unknown" for backward compatibility
+      return "rgba(107, 114, 128, 0.8)"; // Grey for Suspicious
+    }
+
+    return "rgba(107, 114, 128, 0.8)"; // Grey for unrecognized categories
+  });
+
+  // Border colors
+  const borderColors = labels.map((label) => {
+    const lowerLabel = (label || "").toLowerCase();
+
+    if (lowerLabel.includes("legitimate") || lowerLabel.includes("clean") || lowerLabel.includes("safe")) {
+      return "rgba(22, 163, 74, 1)";
+    }
+    if (lowerLabel.includes("credential phishing") || lowerLabel.includes("phishing")) {
+      return "rgba(234, 88, 12, 1)";
+    }
+    if (lowerLabel.includes("malware distribution") || lowerLabel.includes("malware")) {
+      return "rgba(220, 38, 38, 1)";
+    }
+    if (lowerLabel.includes("suspicious") || lowerLabel.includes("unknown")) {
+      return "rgba(107, 114, 128, 1)"; // Grey border for Suspicious
+    }
+
+    return "rgba(107, 114, 128, 1)";
   });
 
   // Destroy existing chart if it exists
@@ -302,7 +373,8 @@ function loadScanResultsChart(riskDistribution) {
         {
           data: data,
           backgroundColor: backgroundColors,
-          borderWidth: 1
+          borderColor: borderColors,
+          borderWidth: 2
         }
       ]
     },
@@ -311,7 +383,22 @@ function loadScanResultsChart(riskDistribution) {
       maintainAspectRatio: false,
       plugins: {
         legend: {
-          position: "right"
+          position: "right",
+          labels: {
+            usePointStyle: true,
+            padding: 15
+          }
+        },
+        tooltip: {
+          callbacks: {
+            label: function (context) {
+              const label = context.label || "";
+              const value = context.parsed || 0;
+              const total = context.dataset.data.reduce((a, b) => a + b, 0);
+              const percentage = Math.round((value / total) * 100);
+              return `${label}: ${value} (${percentage}%)`;
+            }
+          }
         }
       }
     }
@@ -324,12 +411,8 @@ function loadScanResultsChart(riskDistribution) {
 async function loadAnalyticsCharts() {
   try {
     // Fetch user analytics
-    const userResponse = await fetch("/api/admin/users/analytics", {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      credentials: "include"
+    const userResponse = await fetchWithAuth("/api/admin/users/analytics", {
+      method: "GET"
     });
 
     if (!userResponse.ok) {
@@ -339,12 +422,8 @@ async function loadAnalyticsCharts() {
     const userData = await userResponse.json();
 
     // Fetch scan analytics
-    const scanResponse = await fetch("/api/admin/scans/analytics", {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      credentials: "include"
+    const scanResponse = await fetchWithAuth("/api/admin/scans/analytics", {
+      method: "GET"
     });
 
     if (!scanResponse.ok) {
@@ -553,12 +632,8 @@ async function loadUsersList() {
     if (search) url += `&search=${encodeURIComponent(search)}`;
     if (filter !== "all") url += `&filter=${encodeURIComponent(filter)}`;
 
-    const response = await fetch(url, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      credentials: "include"
+    const response = await fetchWithAuth(url, {
+      method: "GET"
     });
 
     if (!response.ok) {
@@ -612,7 +687,7 @@ function renderUsersTable(users) {
       statusText = "Inactive";
     } else if (user.premium) {
       statusClass = "status-premium";
-      statusText = "Premium";
+      statusText = "Admin";
     } else {
       statusClass = "status-free";
       statusText = "Free";
@@ -653,19 +728,22 @@ async function loadScansList() {
     let url = `/api/admin/scans?page=${page}&page_size=${pageSize}`;
     if (risk !== "all") url += `&risk=${encodeURIComponent(risk)}`;
 
-    const response = await fetch(url, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      credentials: "include"
+    console.log("Loading scans from URL:", url);
+
+    const response = await fetchWithAuth(url, {
+      method: "GET"
     });
 
+    console.log("Scans response status:", response.status);
+
     if (!response.ok) {
+      const errorText = await response.text();
+      console.error("Scans response error:", errorText);
       throw new Error("Failed to fetch scans");
     }
 
     const data = await response.json();
+    console.log("Scans data received:", data);
 
     // Update state
     state.scansList.totalPages = Math.ceil(data.total / data.page_size);
@@ -703,8 +781,31 @@ function renderScansTable(scans) {
     // Format dates
     const scanDate = scan.scan_date ? new Date(scan.scan_date).toLocaleString() : "N/A";
 
-    // Determine risk class
-    const riskClass = scan.risk === "High" ? "risk-high" : scan.risk === "Medium" ? "risk-medium" : "risk-low";
+    // Determine risk class based on your new mapping
+    let riskClass = "";
+    const riskType = scan.risk || "Unknown";
+
+    // Updated risk class mapping
+    switch (riskType.toLowerCase()) {
+      case "legitimate":
+      case "clean":
+      case "safe":
+        riskClass = "risk-low";
+        break;
+      case "credential phishing":
+      case "phishing":
+        riskClass = "risk-medium";
+        break;
+      case "malware distribution":
+      case "malware":
+        riskClass = "risk-high";
+        break;
+      case "suspicious":
+      case "unknown": // Keep for backward compatibility
+      default:
+        riskClass = "risk-suspicious"; // Updated class name
+        break;
+    }
 
     // Format URL by truncating if too long
     const url = scan.url || "N/A";
@@ -714,7 +815,7 @@ function renderScansTable(scans) {
       <td title="${url}">${displayUrl}</td>
       <td>${scan.username || "Anonymous"}</td>
       <td>${scanDate}</td>
-      <td><span class="status-badge ${riskClass}">${scan.risk || "Unknown"}</span></td>
+      <td><span class="status-badge ${riskClass}">${scan.risk || "Suspicious"}</span></td>
       <td>${scan.confidence || "N/A"}%</td>
       <td>
         <button class="action-btn view-btn" data-id="${scan._id}">View</button>
@@ -733,12 +834,8 @@ function renderScansTable(scans) {
  */
 async function viewUser(userId) {
   try {
-    const response = await fetch(`/api/admin/users/${userId}`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      credentials: "include"
+    const response = await fetchWithAuth(`/api/admin/users/${userId}`, {
+      method: "GET"
     });
 
     if (!response.ok) {
@@ -788,12 +885,8 @@ async function viewUser(userId) {
  */
 async function editUser(userId) {
   try {
-    const response = await fetch(`/api/admin/users/${userId}`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      credentials: "include"
+    const response = await fetchWithAuth(`/api/admin/users/${userId}`, {
+      method: "GET"
     });
 
     if (!response.ok) {
@@ -895,22 +988,14 @@ async function handleUserFormSubmit(e) {
 
     if (isCreate) {
       // Create new user
-      response = await fetch("/api/admin/users/create", {
+      response = await fetchWithAuth("/api/admin/users/create", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        credentials: "include",
         body: JSON.stringify(formData)
       });
     } else {
       // Update existing user
-      response = await fetch(`/api/admin/users/${userId}`, {
+      response = await fetchWithAuth(`/api/admin/users/${userId}`, {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        credentials: "include",
         body: JSON.stringify(formData)
       });
     }
@@ -944,12 +1029,8 @@ async function deactivateUser(userId) {
   }
 
   try {
-    const response = await fetch(`/api/admin/users/${userId}`, {
-      method: "DELETE",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      credentials: "include"
+    const response = await fetchWithAuth(`/api/admin/users/${userId}`, {
+      method: "DELETE"
     });
 
     if (!response.ok) {
@@ -972,12 +1053,8 @@ async function deactivateUser(userId) {
  */
 async function viewScanDetails(scanId) {
   try {
-    const response = await fetch(`/api/admin/scans/${scanId}`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      credentials: "include"
+    const response = await fetchWithAuth(`/api/admin/scans/${scanId}`, {
+      method: "GET"
     });
 
     if (!response.ok) {
@@ -1128,6 +1205,25 @@ function showNotification(message, type = "info") {
     notification.style.transform = "translateY(20px)";
     notification.style.opacity = "0";
   }, 3000);
+}
+
+/**
+ * Test authentication to diagnose issues
+ */
+async function testAuth() {
+  try {
+    const response = await fetchWithAuth("/api/admin/simple-check", {
+      method: "GET"
+    });
+
+    const data = await response.json();
+    console.log("Simple check response:", data);
+
+    return data;
+  } catch (error) {
+    console.error("Test auth error:", error);
+    return { status: "error", error: error.message };
+  }
 }
 
 /**

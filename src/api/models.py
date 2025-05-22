@@ -15,13 +15,16 @@ class UserBase(BaseModel):
     username: str
     email: EmailStr
     full_name: str
+    # Add these fields to your model
+    premium: bool = False
+    is_active: bool = True
+    is_admin: bool = False
     
     @validator('username')
     def username_must_be_valid(cls, v):
         if not re.match(r'^[a-zA-Z0-9_-]{3,20}$', v):
             raise ValueError('Username must be 3-20 characters and contain only letters, numbers, underscores, and hyphens')
         return v
-
 
 class UserCreate(UserBase):
     """Model for user creation"""
@@ -47,6 +50,7 @@ class UserInDB(UserBase):
     disabled: bool = False
     created_at: datetime = Field(default_factory=datetime.utcnow)
     last_login: Optional[datetime] = None
+    # premium and is_admin will be inherited from UserBase
     
     class Config:
         allow_population_by_field_name = True
@@ -58,10 +62,11 @@ class User(UserBase):
     """User model returned to client"""
     id: str = Field(alias="_id")
     disabled: bool = False
+    premium: bool = False  # Add this
+    is_admin: bool = False  # Add this
     
     class Config:
         allow_population_by_field_name = True
-
 
 class Token(BaseModel):
     """Token model for authentication"""
@@ -112,7 +117,7 @@ class UserResponse(BaseModel):
     is_active: bool = True
     is_admin: bool = False
     
-    class Config:
+class Config:
         allow_population_by_field_name = True
         json_encoders = {
             datetime: lambda dt: dt.isoformat() if dt else None

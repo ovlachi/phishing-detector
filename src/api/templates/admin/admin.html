@@ -4,16 +4,16 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>PhishR Admin Dashboard</title>
-    <link rel="stylesheet" href="/static/css/normalize.css" />
-    <link rel="stylesheet" href="/static/css/styles.css" />
-    <link rel="stylesheet" href="/static/css/admin.css" />
+    <link rel="stylesheet" href="/src/api/static/css/normalize.css" />
+    <link rel="stylesheet" href="/src/api/static/css/styles.css" />
+    <link rel="stylesheet" href="/src/api/static/css/admin.css" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   </head>
   <body>
     <!-- Left Sidebar Navigation -->
     <div class="sidebar">
       <div class="sidebar-logo">
-        <img src="/static/img/logo-placeholder.svg" alt="PhishR Logo" />
+        <img src="/src/api/static/img/logo-placeholder.svg" alt="PhishR Logo" />
         <span>PhishR Admin</span>
       </div>
       <nav class="sidebar-nav">
@@ -53,7 +53,7 @@
             <div class="card-icon">✨</div>
             <div class="card-stats">
               <div class="stat-number" id="premium-users">--</div>
-              <div class="stat-description">Premium Users</div>
+              <div class="stat-description">Admin Users</div>
             </div>
           </div>
           <div class="summary-card">
@@ -88,7 +88,7 @@
             <input type="text" id="user-search" placeholder="Search users..." />
             <select id="user-filter">
               <option value="all">All Users</option>
-              <option value="premium">Premium Users</option>
+              <option value="premium">Admin Users</option>
               <option value="free">Free Users</option>
               <option value="active">Active Users</option>
               <option value="inactive">Inactive Users</option>
@@ -234,7 +234,6 @@
         </div>
       </div>
     </div>
-
-    <script src="/static/js/admin.js"></script>
+    <script src="/src/api/static/js/admin.js"></script>
   </body>
 </html>

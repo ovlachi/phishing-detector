@@ -379,8 +379,21 @@ function toggleDetails() {
  * @param {Array} results - Array of URL scan results
  */
 function displayBatchResults(results) {
+  console.log("=== DEBUGGING displayBatchResults ===");
+  console.log("Results received:", results);
+
+  results.forEach((result, index) => {
+    console.log(`Result ${index}:`, result);
+    console.log(`  class_name: ${result.class_name}`);
+    console.log(`  final_confidence: ${result.final_confidence}`);
+    console.log(`  probabilities: ${JSON.stringify(result.probabilities)}`);
+    console.log(`  error: ${result.error}`);
+    console.log(`  threat_level: ${result.threat_level}`);
+  });
+  console.log("================================");
   // Store results globally for reference
   window.batchResults = results;
+  window.batchResultsData = results; // For debugging
 
   // Hide single result, show batch dashboard
   if (document.getElementById("result-card")) {
@@ -409,6 +422,10 @@ function displayBatchResults(results) {
  * @param {Array} results - Array of URL scan results
  */
 function updateBatchSummary(results) {
+  console.log("=== enhanced-ui.js updateBatchSummary called ===");
+  console.log("Results:", results);
+  console.log("Updating batch summary stats with data:", results);
+
   const stats = {
     total: results.length,
     high: 0,
@@ -418,7 +435,11 @@ function updateBatchSummary(results) {
 
   results.forEach((result) => {
     const threatLevel = result.threat_level || "unknown";
-
+    // FIXED: Don't count errors/unknown as safe
+    if (result.error || !result.class_name || result.class_name === null) {
+      // Don't count failed analyses as safe - they should be neutral/unknown
+      return; // Don't increment any counter for failed analyses
+    }
     switch (threatLevel) {
       case "high":
       case "critical":
@@ -427,11 +448,20 @@ function updateBatchSummary(results) {
       case "medium":
         stats.medium++;
         break;
+      case "low":
+      case "safe":
+        // Only count as safe if ML actually analyzed it successfully
+        if (result.class_name && result.class_name !== null) {
+          stats.safe++;
+        }
+        break;
       default:
-        stats.safe++;
+        // Unknown/failed analyses don't count as safe
         break;
     }
   });
+
+  console.log("Calculated summary stats:", stats);
 
   // Update the summary boxes
   if (document.getElementById("total-urls")) {
