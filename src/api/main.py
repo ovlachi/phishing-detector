@@ -384,11 +384,12 @@ async def api_classify_url(request: UrlRequest, request_obj: Request):
             user = await get_user_from_cookie(token)
             if user:
                 # Create scan history entry with enhanced fields
+                disposition = result.get('class') or ('Suspicious' if result.get('error') else 'Unknown')
                 scan_entry = {
                     "user_id": str(user.id),
                     "url": url,
-                    "disposition": result.get('class', 'Unknown'),
-                    "classification": result.get('class', 'Unknown'),
+                    "disposition": disposition,  # ← UPDATED
+                    "classification": disposition,  # ← UPDATED
                     "probabilities": result.get('probabilities'),
                     "timestamp": datetime.utcnow(),
                     "source": "Single Scan",
@@ -490,7 +491,7 @@ async def api_classify_batch(
         # Save results to scan history
         for result in results:
             # Fix: Handle failed content fetches properly
-            disposition = result.get('class') or ('Content Fetch Failed' if result.get('error') else 'Unknown')
+            disposition = result.get('class') or ('Suspicious' if result.get('error') else 'Unknown')
             # Create scan history entry with enhanced fields for all results
             scan_entry = {
                 "user_id": str(user.id),

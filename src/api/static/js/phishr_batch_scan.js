@@ -90,13 +90,30 @@ function showBatchDetails(index) {
   riskLabel.textContent = urlData.risk || "Unknown";
   detailsCard.appendChild(riskLabel);
 
-  // Add confidence meter
+  // Add confidence meter - FIXED VERSION
   const confidenceSection = document.createElement("div");
   confidenceSection.className = "confidence-section";
 
+  // Calculate confidence from real API data
+  let confidence = 0;
+
+  if (urlData.final_confidence) {
+    confidence = Math.round(urlData.final_confidence * 100);
+  } else if (urlData.probabilities) {
+    // Get the highest probability as confidence
+    const probValues = Object.values(urlData.probabilities);
+    confidence = Math.round(Math.max(...probValues) * 100);
+  } else if (urlData.error) {
+    confidence = 0; // No confidence for failed analyses
+  } else {
+    confidence = 50; // Default confidence for unknown cases
+  }
+
+  console.log("Calculated confidence:", confidence, "from data:", urlData);
+
   const confidenceLabel = document.createElement("div");
   confidenceLabel.className = "confidence-label";
-  confidenceLabel.innerHTML = "<span>Confidence Level</span><span>" + (urlData.confidence || "0") + "%</span>";
+  confidenceLabel.innerHTML = "<span>Confidence Level</span><span>" + confidence + "%</span>";
   confidenceSection.appendChild(confidenceLabel);
 
   const confidenceMeter = document.createElement("div");
@@ -104,9 +121,20 @@ function showBatchDetails(index) {
 
   const confidenceFill = document.createElement("div");
   confidenceFill.className = "confidence-fill";
-  confidenceFill.style.width = (urlData.confidence || "0") + "%";
-  confidenceMeter.appendChild(confidenceFill);
+  confidenceFill.style.width = confidence + "%";
 
+  // Set color based on confidence level
+  if (confidence >= 80) {
+    confidenceFill.style.backgroundColor = "#22c55e"; // Green
+  } else if (confidence >= 60) {
+    confidenceFill.style.backgroundColor = "#3b82f6"; // Blue
+  } else if (confidence >= 40) {
+    confidenceFill.style.backgroundColor = "#f59e0b"; // Orange
+  } else {
+    confidenceFill.style.backgroundColor = "#ef4444"; // Red
+  }
+
+  confidenceMeter.appendChild(confidenceFill);
   confidenceSection.appendChild(confidenceMeter);
   detailsCard.appendChild(confidenceSection);
 
@@ -405,13 +433,28 @@ function filterBatchResults() {
 
   // Show or hide based on filter
   resultItems.forEach((item) => {
-    const risk = item.querySelector(".url-status").textContent.toLowerCase();
+    // FIXED: Look for the right class and text content
+    const statusElement = item.querySelector(".url-status");
+    if (!statusElement) return;
 
-    if (filterValue === "all" || (filterValue === "high" && risk === "high") || (filterValue === "medium" && risk === "medium") || (filterValue === "safe" && risk === "low")) {
-      item.style.display = "flex";
-    } else {
-      item.style.display = "none";
+    const risk = statusElement.textContent.toLowerCase().trim();
+    console.log(`Item risk: "${risk}", Filter: "${filterValue}"`);
+
+    let showItem = false;
+
+    if (filterValue === "all") {
+      showItem = true;
+    } else if (filterValue === "high" && risk.includes("high")) {
+      showItem = true;
+    } else if (filterValue === "medium" && risk.includes("medium")) {
+      showItem = true;
+    } else if (filterValue === "safe" && (risk.includes("safe") || risk.includes("low"))) {
+      showItem = true;
+    } else if (filterValue === "suspicious" && risk.includes("suspicious")) {
+      showItem = true;
     }
+
+    item.style.display = showItem ? "flex" : "none";
   });
 }
 
@@ -460,13 +503,11 @@ function sortBatchResults() {
  * @param {Array} resultsData - Array of result objects
  */
 function initializeBatchResults(resultsData) {
-  console.log("Initializing batch results with data:", resultsData);
+  console.log("Initializing batch results with REAL API data:", resultsData);
 
   // Store the results data for later use
   window.batchResultsData = resultsData || [];
-
-  // Update summary stats FIRST
-  updateBatchSummary(resultsData);
+  window.batchResults = resultsData || []; // Ensure both variables are set
 
   // Get the batch results container
   const batchResults = document.getElementById("batch-results");
@@ -478,21 +519,56 @@ function initializeBatchResults(resultsData) {
   // Clear previous results
   batchResults.innerHTML = "";
 
-  // Update summary statistics
-  updateBatchSummary(window.batchResultsData);
-
-  // Generate result items
+  // Generate result items using REAL API data structure
   window.batchResultsData.forEach((result, index) => {
-    // Create result item
     const resultItem = document.createElement("div");
     resultItem.className = "batch-result-item";
 
-    // Add risk indicator
+    // Map real API data to display format
+    // Fixed code:
+    let displayRisk = "Unknown";
+    let riskClass = "unknown";
+
+    if (result.error) {
+      displayRisk = "Suspicious";
+      riskClass = "suspicious";
+    } else if (result.class_name) {
+      switch (result.class_name.toLowerCase()) {
+        case "legitimate":
+          displayRisk = "Safe";
+          riskClass = "safe";
+          break;
+        case "credential phishing":
+          displayRisk = "High Risk";
+          riskClass = "high";
+          break;
+        case "malware distribution":
+          displayRisk = "High Risk";
+          riskClass = "high";
+          break;
+        default:
+          displayRisk = "Suspicious";
+          riskClass = "suspicious";
+      }
+    } else {
+      // No error but no classification = suspicious
+      displayRisk = "Suspicious";
+      riskClass = "suspicious";
+    }
+
+    // Calculate confidence from real API data
+    let confidence = 0;
+    if (result.final_confidence) {
+      confidence = Math.round(result.final_confidence * 100);
+    } else if (result.probabilities) {
+      confidence = Math.round(Math.max(...Object.values(result.probabilities)) * 100);
+    }
+
+    // Create the UI elements
     const riskIndicator = document.createElement("div");
-    riskIndicator.className = "risk-indicator " + (result.risk || "").toLowerCase();
+    riskIndicator.className = `risk-indicator ${riskClass}`;
     resultItem.appendChild(riskIndicator);
 
-    // Add URL info
     const urlInfo = document.createElement("div");
     urlInfo.className = "url-info";
 
@@ -501,17 +577,17 @@ function initializeBatchResults(resultsData) {
     urlText.textContent = result.url || "Unknown URL";
 
     const urlStatus = document.createElement("div");
-    urlStatus.className = "url-status " + (result.risk || "").toLowerCase();
-    urlStatus.textContent = result.risk || "Unknown";
+    urlStatus.className = `url-status ${riskClass}`;
+    urlStatus.textContent = displayRisk;
 
     urlInfo.appendChild(urlText);
     urlInfo.appendChild(urlStatus);
     resultItem.appendChild(urlInfo);
 
-    // Add confidence
+    // Add confidence using real data
     const confidenceIndicator = document.createElement("div");
     confidenceIndicator.className = "confidence-indicator";
-    confidenceIndicator.textContent = (result.confidence || "0") + "%";
+    confidenceIndicator.textContent = confidence + "%";
     resultItem.appendChild(confidenceIndicator);
 
     // Add actions
@@ -521,9 +597,8 @@ function initializeBatchResults(resultsData) {
     const detailsButton = document.createElement("button");
     detailsButton.className = "batch-action";
     detailsButton.textContent = "Details";
-    detailsButton.dataset.index = index; // Store the index in a data attribute
+    detailsButton.dataset.index = index;
 
-    // Use addEventListener instead of onclick
     detailsButton.addEventListener("click", function (e) {
       e.preventDefault();
       e.stopPropagation();
@@ -532,18 +607,17 @@ function initializeBatchResults(resultsData) {
 
     actions.appendChild(detailsButton);
     resultItem.appendChild(actions);
-
-    // Add to container
     batchResults.appendChild(resultItem);
   });
+
+  // Update summary with real data
+  updateBatchSummary(window.batchResultsData);
 
   // Show the dashboard
   const batchDashboard = document.getElementById("batch-dashboard");
   if (batchDashboard) {
     batchDashboard.classList.remove("hidden");
   }
-
-  console.log("Batch results initialized successfully");
 }
 
 /**
@@ -560,28 +634,44 @@ function updateBatchSummary(resultsData) {
     total: resultsData.length,
     high: 0,
     medium: 0,
-    safe: 0
+    safe: 0,
+    suspicious: 0 // Add suspicious category
   };
 
-  // Count URLs by risk level
+  // Count URLs by risk level - FIXED VERSION
   resultsData.forEach((result) => {
-    const risk = (result.risk || "").toLowerCase();
+    console.log("Processing result for summary:", result);
 
-    // Check for various risk level terms
-    if (risk.includes("high") || risk.includes("critical") || risk.includes("severe")) {
-      stats.high++;
-    } else if (risk.includes("medium") || risk.includes("moderate") || risk.includes("warning")) {
-      stats.medium++;
-    } else if (risk.includes("low") || risk.includes("safe") || risk.includes("minimal")) {
-      stats.safe++;
+    // Check if this is a failed analysis or unknown result
+    if (result.error || !result.class_name || result.class_name === null) {
+      stats.suspicious++; // Count as suspicious
+      console.log("  -> Counted as SUSPICIOUS");
+      return;
     }
-    // If none match, default to counting as "safe"
-    else {
-      stats.safe++;
+
+    if (result.class_name) {
+      switch (result.class_name.toLowerCase()) {
+        case "legitimate":
+          stats.safe++;
+          console.log("  -> Counted as SAFE");
+          break;
+        case "credential phishing":
+        case "malware distribution":
+          stats.high++;
+          console.log("  -> Counted as HIGH");
+          break;
+        default:
+          stats.suspicious++;
+          console.log("  -> Counted as SUSPICIOUS (unknown class)");
+          break;
+      }
+    } else {
+      stats.suspicious++;
+      console.log("  -> Counted as SUSPICIOUS (no class)");
     }
   });
 
-  console.log("Calculated summary stats:", stats);
+  console.log("Final stats:", stats);
 
   // Update summary stats in the UI
   const totalUrls = document.getElementById("total-urls");
