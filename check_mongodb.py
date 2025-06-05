@@ -6,7 +6,7 @@ import sys
 import os
 
 # MongoDB connection details (update with your actual connection info)
-MONGO_URL = os.getenv("MONGO_URL", "mongodb+srv://mainUser:8nLh3v2H1A0iVfr1@cluster0.nipyff1.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")  # Change if using a different connection string
+MONGO_URL = os.getenv("MONGO_URL", "mongodb+srv://mainUser:xxxxxxxxxxxxxxxxxx@cluster0.nipyff1.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")  # Change if using a different connection string
 DB_NAME = os.getenv("DB_NAME", "phishing_detector")  # Replace with your database name
 COLLECTION_NAME = "scan_history"  # Replace with your collection name
 
