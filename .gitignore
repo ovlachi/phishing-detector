@@ -1,0 +1,89 @@
+# Environment variables and sensitive data
+.env
+.env.local
+.env.*.local
+.env.production
+APIKeys-for-PhishR.rtf
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environment
+venv/
+env/
+ENV/
+.venv/
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+phishing_detector.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# macOS
+.DS_Store
+
+# Logs
+*.log
+logs/
+
+# Model files (if large)
+*.pkl
+*.joblib
+models/*.pkl
+models/*.joblib
+
+# Temporary files
+temp/
+tmp/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# pytest
+.pytest_cache/
+.coverage
+
+# Node modules (if you add any frontend tools)
+node_modules/
+
+# Deployment
+.netlify/
+
+# Backup files
+*.bak
+*.backup
+
+# OS generated files
+Thumbs.db
+ehthumbs.db
+
+# Security scan results
+scan_results/
+test_results/

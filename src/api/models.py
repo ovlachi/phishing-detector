@@ -7,7 +7,7 @@ from datetime import datetime
 import re
 from bson import ObjectId
 
-from src.api.database import PyObjectId
+from src.api.utils import PyObjectId
 
 
 class UserBase(BaseModel):
@@ -15,13 +15,16 @@ class UserBase(BaseModel):
     username: str
     email: EmailStr
     full_name: str
+    # Add these fields to your model
+    premium: bool = False
+    is_active: bool = True
+    is_admin: bool = False
     
     @validator('username')
     def username_must_be_valid(cls, v):
         if not re.match(r'^[a-zA-Z0-9_-]{3,20}$', v):
             raise ValueError('Username must be 3-20 characters and contain only letters, numbers, underscores, and hyphens')
         return v
-
 
 class UserCreate(UserBase):
     """Model for user creation"""
@@ -47,6 +50,7 @@ class UserInDB(UserBase):
     disabled: bool = False
     created_at: datetime = Field(default_factory=datetime.utcnow)
     last_login: Optional[datetime] = None
+    # premium and is_admin will be inherited from UserBase
     
     class Config:
         allow_population_by_field_name = True
@@ -58,10 +62,11 @@ class User(UserBase):
     """User model returned to client"""
     id: str = Field(alias="_id")
     disabled: bool = False
+    premium: bool = False  # Add this
+    is_admin: bool = False  # Add this
     
     class Config:
         allow_population_by_field_name = True
-
 
 class Token(BaseModel):
     """Token model for authentication"""
@@ -89,8 +94,31 @@ class ScanHistoryEntry(BaseModel):
     timestamp: datetime = Field(default_factory=datetime.utcnow)
     source: str = "Single Scan"
     brand: Optional[str] = "Unknown"
+
+class UserUpdateRequest(BaseModel):
+    """Model for user update requests"""
+    username: Optional[str] = None
+    email: Optional[str] = None
+    password: Optional[str] = None
+    full_name: Optional[str] = None
+    premium: Optional[bool] = None
+    is_active: Optional[bool] = None
+    is_admin: Optional[bool] = None
+
+class UserResponse(BaseModel):
+    """Model for user responses"""
+    id: str = Field(..., alias="_id")
+    username: str
+    email: str
+    full_name: Optional[str] = None
+    created_at: Optional[datetime] = None
+    last_login: Optional[datetime] = None
+    premium: bool = False
+    is_active: bool = True
+    is_admin: bool = False
     
-    class Config:
+class Config:
         allow_population_by_field_name = True
-        arbitrary_types_allowed = True
-        json_encoders = {ObjectId: str}
+        json_encoders = {
+            datetime: lambda dt: dt.isoformat() if dt else None
+        }

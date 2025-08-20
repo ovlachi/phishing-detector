@@ -1,6 +1,7 @@
 """
 Authentication utilities for the Phishing Detector API
 """
+import os
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any
 from jose import JWTError, jwt
@@ -92,6 +93,24 @@ async def get_current_active_user(current_user: User = Depends(get_current_user)
         raise HTTPException(status_code=400, detail="Inactive user")
     return current_user
 
+async def get_current_admin_user(current_user: User = Depends(get_current_user)) -> User:
+    """
+    Dependency to verify the user has admin privileges
+    Raises HTTP 403 if the user is not an admin
+    """
+    # Check if the user has the is_admin flag set to True
+    if not getattr(current_user, "is_admin", False):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Insufficient permissions: admin access required",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    # Log admin action for audit purposes
+    print(f"Admin action by user: {current_user.username} (ID: {current_user.id})")
+    
+    return current_user
+
 
 # Function to extract user from token in cookie (for templates)
 async def get_user_from_cookie(cookie_token: str) -> Optional[User]:
@@ -144,6 +163,7 @@ async def get_user_from_token(token: str):
     """Extract user from auth header token"""
     print(f"get_user_from_token called with token: {token[:15]}...")
     
+    
     # Remove any quotes from the token
     if token and token.startswith('"') and token.endswith('"'):
         token = token[1:-1]  # Remove surrounding quotes
@@ -181,6 +201,9 @@ async def get_user_from_token(token: str):
             print("Converted ObjectId to string")
         
         print("Creating User model from user_data")
+        print(f"User data before User creation: {user_data}")
+        print(f"User data contains is_admin: {'is_admin' in user_data}")
+        print(f"User data is_admin value: {user_data.get('is_admin')}")
         from src.api.models import User
         user = User(**user_data)
         print(f"Created User model with username: {user.username}, id: {user.id}")
@@ -191,3 +214,74 @@ async def get_user_from_token(token: str):
         import traceback
         traceback.print_exc()
         return None
+    
+    # =====================================================================
+# New admin authentication dependency 
+# =====================================================================
+
+async def get_current_admin_user(current_user: User = Depends(get_current_user)) -> User:
+    """
+    Dependency to verify the user has admin privileges
+    Raises HTTP 403 if the user is not an admin
+    """
+    # Check if the user has the is_admin flag set to True
+    if not getattr(current_user, "is_admin", False):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Insufficient permissions: admin access required",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    # Log admin action for audit purposes
+    print(f"Admin action by user: {current_user.username} (ID: {current_user.id})")
+    
+    return current_user
+
+# Add this function to your auth.py file
+async def create_admin_user():
+    """
+    Create an admin user if one doesn't exist yet
+    This function should be called during application startup
+    """
+    from src.api.database import users_collection
+    
+    # Check if any admin user already exists
+    admin_user = await users_collection.find_one({"is_admin": True})
+    
+    if not admin_user:
+        print("No admin user found. Creating default admin user...")
+        
+        # Create admin user with secure password
+        # IMPORTANT: Change this password in production!
+        admin_password = os.getenv("ADMIN_PASSWORD", "PhishR@admin2025")  # Use env var or default
+        hashed_password = get_password_hash(admin_password)
+        
+        admin_user_data = {
+            "username": "admin",
+            "email": "admin@phishr.com",
+            "full_name": "PhishR Admin",
+            "hashed_password": hashed_password,
+            "created_at": datetime.utcnow(),
+            "last_login": None,
+            "premium": True,
+            "is_active": True,
+            "is_admin": True,
+            "disabled": False  # Match your User model field
+        }
+        
+        try:
+            # Insert the admin user into the database
+            result = await users_collection.insert_one(admin_user_data)
+            
+            if result.inserted_id:
+                print(f"Default admin user created with ID: {result.inserted_id}")
+                print(f"Username: admin | Initial password: {admin_password}")
+                print("IMPORTANT: Change this password after first login!")
+            else:
+                print("Failed to create admin user")
+        except Exception as e:
+            print(f"Error creating admin user: {str(e)}")
+    else:
+        print("Admin user already exists - ID:", admin_user.get("_id"))
+
+        

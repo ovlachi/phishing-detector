@@ -261,7 +261,7 @@ h1 {
 }
 
 .result-card:hover {
-  transform: translateY(-5px);
+  transform: translateY(-2px);
 }
 
 .result-header {
@@ -431,6 +431,42 @@ h1 {
 .metric-value {
   color: var(--success-green);
   font-weight: 600;
+}
+
+/* Risk level status badges for User Dashboard */
+.status-badge.risk-low {
+  background-color: #10b981;
+  color: white;
+}
+
+.status-badge.risk-medium {
+  background-color: #f59e0b;
+  color: white;
+}
+
+.status-badge.risk-high {
+  background-color: #ef4444;
+  color: white;
+}
+
+.status-badge.risk-suspicious {
+  /* New class for Suspicious */
+  background-color: #6b7280;
+  color: white;
+}
+
+/* Keep the old class for backward compatibility */
+.status-badge.risk-unknown {
+  background-color: #6b7280;
+  color: white;
+}
+
+.status-badge {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
 }
 
 /* Footer
@@ -973,354 +1009,670 @@ body {
   margin-bottom: 2rem;
 }
 
-/* Status Colors - Update these if needed */
-.status-clean {
+/* Enhanced Analysis Sections */
+.enhanced-analysis {
+  margin: 15px 0;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border-left: 4px solid #007bff;
+}
+
+.threat-level-section {
+  margin-bottom: 15px;
+}
+
+/* Threat Level Styling */
+.threat-low {
   color: #28a745;
-  font-weight: 500;
+  font-weight: bold;
+  background: #d4edda;
+  padding: 2px 8px;
+  border-radius: 4px;
 }
 
-.status-phishing {
-  color: #dc7b35;
-  font-weight: 500;
+.threat-medium {
+  color: #ffc107;
+  font-weight: bold;
+  background: #fff3cd;
+  padding: 2px 8px;
+  border-radius: 4px;
 }
 
-.status-error {
+.threat-high {
   color: #dc3545;
-  font-weight: 500;
+  font-weight: bold;
+  background: #f8d7da;
+  padding: 2px 8px;
+  border-radius: 4px;
 }
 
-/* Empty History State */
-.empty-history {
+.threat-unknown {
+  color: #6c757d;
+  font-weight: bold;
+  background: #e9ecef;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+/* Analysis Sources */
+.analysis-sources {
+  margin-top: 15px;
+}
+
+.source-item {
+  display: flex;
+  justify-content: space-between;
+  margin: 8px 0;
+  padding: 5px 0;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.source-label {
+  font-weight: bold;
+  color: #495057;
+}
+
+/* Batch Results Enhancements */
+.batch-summary {
+  margin: 15px 0;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.summary-stats {
+  display: flex;
+  gap: 15px;
+  justify-content: space-around;
+}
+
+.stat {
+  padding: 10px 15px;
+  border-radius: 6px;
+  font-weight: bold;
   text-align: center;
-  padding: 2rem;
-  color: #666;
-  font-style: italic;
 }
 
-/* Responsive Design */
-@media (max-width: 768px) {
-  body {
-    flex-direction: column;
-  }
-
-  .sidebar {
-    width: 100%;
-    flex-direction: row;
-    overflow-x: auto;
-  }
-
-  .sidebar-nav {
-    flex: 1;
-  }
-
-  .sidebar-nav ul {
-    flex-direction: row;
-    gap: 0.5rem;
-    overflow-x: auto;
-  }
-
-  .main-content {
-    padding: 1rem;
-  }
+.stat.high-risk {
+  background: #f8d7da;
+  color: #721c24;
 }
 
-/* Enhanced Error Card Styles */
-.result-card.error-card {
-  border-left: 5px solid #ff9800;
-  background-color: #fff3e0;
+.stat.medium-risk {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.stat.low-risk {
+  background: #d4edda;
+  color: #155724;
+}
+
+.stat.unknown-risk {
+  background: #d6d6d6;
+  color: #383d41;
+}
+
+/* Table Status Classes */
+.status-high-risk {
+  color: #dc3545;
+  font-weight: bold;
+}
+
+.status-medium-risk {
+  color: #ffc107;
+  font-weight: bold;
+}
+
+.status-low-risk {
+  color: #28a745;
+  font-weight: bold;
+}
+
+.url-cell {
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Unknown Result Styling */
+.unknown-result {
+  border-left: 4px solid #ffc107;
+  background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
 }
 
 .error-explanation {
-  margin-top: 10px;
-  font-weight: normal;
-  color: #555;
-}
-
-.error-reasons {
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 8px;
   margin: 15px 0;
-  padding-left: 25px;
-  color: #666;
+  border-left: 4px solid #6c757d;
 }
 
-.error-reasons li {
-  margin-bottom: 5px;
-}
-
-.error-note {
-  margin-top: 15px;
-  font-style: italic;
-  color: #777;
-  border-top: 1px solid #ddd;
-  padding-top: 10px;
-}
-
-/* Specific Error Styles for Fetch Failures */
-.status-fetch-error {
-  color: #ff9800;
-  font-weight: 500;
-}
-
-.status-fetch-error::before {
-  content: "⚠️ ";
-}
-
-/* Enhanced Malware Distribution Styles */
-.result-card.dangerous {
-  border-left: 5px solid #dc3545;
-}
-
-.result-card.dangerous .result-header {
-  background-color: #fff5f5;
+.error-reason {
+  background: #e9ecef;
   padding: 10px;
-  border-bottom: 1px solid #ffebee;
+  border-radius: 6px;
+  margin: 10px 0;
+  font-weight: bold;
+  color: #495057;
 }
 
-.result-card.dangerous .result-icon {
-  font-size: 1.5rem;
-  animation: pulse 2s infinite;
+.error-description {
+  margin: 15px 0;
+  font-size: 1.1em;
+  line-height: 1.5;
 }
 
-/* Pulse animation for dangerous content */
-@keyframes pulse {
-  0% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.1);
-  }
-  100% {
-    transform: scale(1);
-  }
+.possible-causes {
+  background: #fff3cd;
+  padding: 15px;
+  border-radius: 6px;
+  margin: 15px 0;
 }
 
-/* Better error messages styling */
-.error-message {
-  background: #ffebee;
+.possible-causes ul {
+  margin: 10px 0;
+  padding-left: 20px;
+}
+
+.possible-causes li {
+  margin: 5px 0;
+  line-height: 1.4;
+}
+
+.user-action {
+  background: #d1ecf1;
+  padding: 15px;
+  border-radius: 6px;
+  margin: 15px 0;
+  border-left: 4px solid #17a2b8;
+}
+
+.security-recommendation {
+  background: #f8d7da;
+  padding: 15px;
+  border-radius: 6px;
+  margin: 15px 0;
+  border-left: 4px solid #dc3545;
+}
+
+.security-recommendation h5 {
+  margin: 0 0 10px 0;
+  color: #721c24;
+}
+
+.url-analysis {
+  background: #d4edda;
+  padding: 15px;
+  border-radius: 6px;
+  margin: 15px 0;
+  border-left: 4px solid #28a745;
+}
+
+.technical-details {
+  margin: 20px 0;
+  padding: 10px;
+  background: #f8f9fa;
+  border-radius: 6px;
+}
+
+.technical-details summary {
+  cursor: pointer;
+  font-weight: bold;
+  color: #6c757d;
+  padding: 5px;
+}
+
+.technical-details pre {
+  background: #343a40;
+  color: #f8f9fa;
   padding: 10px;
   border-radius: 4px;
-  color: #c62828;
+  overflow-x: auto;
   margin: 10px 0;
+  font-size: 0.9em;
 }
 
-/* Tooltip for error details in tables */
-.status-fetch-error[title] {
-  cursor: help;
-  border-bottom: 1px dotted #ff9800;
+/* Modal Styles for Unknown URL Details */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
 }
 
-/* Improved batch results table styling */
+.modal-content {
+  background: white;
+  border-radius: 8px;
+  max-width: 600px;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 20px 10px 20px;
+  border-bottom: 1px solid #eee;
+}
+
+.modal-header h3 {
+  margin: 0;
+  color: #333;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #666;
+  padding: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-close:hover {
+  color: #000;
+}
+
+.modal-body {
+  padding: 20px;
+}
+
+.modal-url {
+  background: #f8f9fa;
+  padding: 10px;
+  border-radius: 4px;
+  margin-bottom: 15px;
+  word-break: break-all;
+}
+
+/* Batch Results Table */
 .batch-results-table {
   width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
-  font-size: 0.9rem;
-  margin-top: 20px;
+  border-collapse: collapse;
+  margin: 20px 0;
 }
 
 .batch-results-table th,
 .batch-results-table td {
   padding: 12px;
   text-align: left;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid #ddd;
 }
 
 .batch-results-table th {
   background-color: #f8f9fa;
-  font-weight: 600;
-  color: #495057;
-  border-top: 2px solid #dee2e6;
-}
-
-.batch-results-table tr:nth-child(even) {
-  background-color: #f9f9f9;
+  font-weight: bold;
 }
 
 .batch-results-table tr:hover {
-  background-color: #e8f5e9;
+  background-color: #f5f5f5;
 }
 
-/* URL cell styling */
-.batch-results-table td:first-child {
-  font-family: monospace;
-  word-break: break-all;
+.url-cell {
   max-width: 300px;
-}
-
-/* Status indicator enhancement */
-.status-clean::before {
-  content: "✓ ";
-}
-
-.status-phishing::before {
-  content: "⚠️ ";
-}
-
-.status-error::before {
-  content: "❌ ";
-}
-
-/* Loading spinner improvement */
-.loading-spinner {
-  text-align: center;
-  padding: 40px;
-}
-
-.spinner {
-  border: 4px solid rgba(66, 165, 245, 0.1);
-  border-radius: 50%;
-  border-top: 4px solid #42a5f5;
-  width: 50px;
-  height: 50px;
-  margin: 0 auto 15px;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
-/* Responsive improvements */
-@media (max-width: 768px) {
-  .batch-results-table {
-    display: block;
-    overflow-x: auto;
-    white-space: nowrap;
-  }
-
-  .error-reasons {
-    padding-left: 15px;
-  }
-}
-
-/* Ensure header stays in place */
-body {
-  margin: 0;
-  min-height: 100vh;
-  overflow-x: auto;
-  overflow-y: auto;
-}
-
-/* Fix header positioning */
-.header {
-  position: relative;
-  z-index: 100;
-  background-color: #ffffff;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-/* Fix results section to not interfere with header */
-.results-section {
-  margin-top: 2rem;
-  position: relative;
-  background: white;
-  padding: 1.5rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  z-index: 1;
-}
-
-/* Ensure proper spacing between sections */
-.container {
-  width: 100%;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 20px;
-}
-
-/* Fix scrolling behavior */
-html {
-  scroll-behavior: smooth;
-}
-
-/* Ensure results are properly contained */
-.results-container {
-  position: relative;
-  z-index: 2;
-}
-
-/* Better result card styling */
-.result-card {
-  background-color: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  padding: 1.5rem;
-  margin-bottom: 1.5rem;
-  transition: transform 0.2s ease;
-  position: relative;
-}
-
-.result-card:hover {
-  transform: translateY(-2px);
-}
-
-/* Enhance probability bars for credential phishing */
-.probability-item {
-  margin-bottom: 0.75rem;
-}
-
-.probability-label {
-  font-weight: 500;
-  margin-bottom: 0.25rem;
-  color: #333;
-}
-
-.probability-bar-container {
-  background-color: #e9ecef;
-  border-radius: 4px;
-  height: 24px;
-  position: relative;
   overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.probability-bar {
-  height: 100%;
+.details-btn {
+  background: #007bff;
+  color: white;
+  border: none;
+  padding: 5px 10px;
   border-radius: 4px;
-  transition: width 0.5s ease;
+  cursor: pointer;
+  font-size: 12px;
 }
 
-/* Different colors for different threat types */
-.probability-item:has(.probability-label:contains("Credential Phishing")) .probability-bar {
-  background-color: #dc3545;
+.details-btn:hover {
+  background: #0056b3;
 }
 
-.probability-item:has(.probability-label:contains("Malware")) .probability-bar {
-  background-color: #721c24;
+.small-btn {
+  padding: 3px 8px;
+  font-size: 11px;
 }
 
-.probability-item:has(.probability-label:contains("Legitimate")) .probability-bar {
-  background-color: #28a745;
+/* Batch Summary */
+.batch-summary {
+  margin: 20px 0;
+}
+
+.summary-stats {
+  display: flex;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+
+.stat {
+  padding: 10px 15px;
+  border-radius: 6px;
+  font-weight: bold;
+  min-width: 120px;
+  text-align: center;
+}
+
+.stat.high-risk {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.stat.medium-risk {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.stat.low-risk {
+  background: #d4edda;
+  color: #155724;
+}
+
+.stat.unknown-risk {
+  background: #d6d6d6;
+  color: #383d41;
+}
+
+/* Batch Unknown Summary */
+.batch-unknown-summary {
+  background: #d6d6d6;
+  padding: 15px;
+  border-radius: 8px;
+  margin: 15px 0;
+  border-left: 4px solid #ffc107;
+}
+
+.unknown-urls-list {
+  margin: 15px 0;
+}
+
+.unknown-url-item {
+  background: #f8f9fa;
+  padding: 10px;
+  margin: 8px 0;
+  border-radius: 4px;
+  border-left: 3px solid #6c757d;
+}
+
+.unknown-url-item .url {
+  font-weight: bold;
+  color: #495057;
+  word-break: break-all;
+  margin-bottom: 5px;
+}
+
+.unknown-url-item .reason {
+  color: #6c757d;
+  font-size: 0.9em;
+  margin: 5px 0;
+}
+
+/* Add these styles to your existing CSS file: */
+
+/* Classification Summary */
+.classification-summary {
+  background: #f8f9fa;
+  padding: 15px;
+  border-radius: 8px;
+  margin: 15px 0;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+  margin-top: 10px;
+}
+
+.summary-item {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.classification-badge {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-weight: bold;
+  font-size: 0.9em;
+}
+
+.classification-badge.legitimate {
+  background: #d4edda;
+  color: #155724;
+}
+
+.classification-badge.phishing,
+.classification-badge.credential-phishing {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.classification-badge.malware,
+.classification-badge.malware-distribution {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.classification-badge.unknown {
+  background: #e2e3e5;
+  color: #383d41;
+}
+
+.threat-badge {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-weight: bold;
+  font-size: 0.9em;
+}
+
+.threat-badge.threat-high {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.threat-badge.threat-medium {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.threat-badge.threat-low {
+  background: #d4edda;
+  color: #155724;
+}
+
+.threat-badge.threat-unknown {
+  background: #e2e3e5;
+  color: #383d41;
+}
+
+.confidence-value {
+  font-weight: bold;
+  color: #495057;
+}
+
+/* ML Analysis */
+.ml-analysis {
+  background: #e7f3ff;
+  padding: 15px;
+  border-radius: 8px;
+  margin: 15px 0;
+}
+
+.probability-breakdown {
+  margin-top: 10px;
+}
+
+.probability-item {
+  margin: 10px 0;
+}
+
+.probability-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 5px;
+}
+
+.class-name {
+  font-weight: bold;
+  color: #495057;
 }
 
 .probability-value {
-  position: absolute;
-  right: 8px;
-  top: 50%;
-  transform: translateY(-50%);
-  line-height: 24px;
-  color: #212529;
-  font-size: 0.875rem;
+  font-weight: bold;
+  color: #007bff;
+}
+
+.probability-bar-container {
+  background: #e9ecef;
+  border-radius: 4px;
+  height: 8px;
+  overflow: hidden;
+}
+
+.probability-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+/* Analysis Sources */
+.analysis-sources {
+  background: #f8f9fa;
+  padding: 15px;
+  border-radius: 8px;
+  margin: 15px 0;
+}
+
+.sources-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+  margin-top: 10px;
+}
+
+.source-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  background: white;
+  border-radius: 6px;
+  border-left: 4px solid #007bff;
+}
+
+.source-icon {
+  font-size: 1.5em;
+}
+
+.source-details strong {
+  display: block;
+  color: #495057;
+}
+
+.source-details small {
+  color: #6c757d;
+}
+
+/* URL Features */
+.url-features {
+  background: #f0f8f0;
+  padding: 15px;
+  border-radius: 8px;
+  margin: 15px 0;
+}
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.feature-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px;
+  background: white;
+  border-radius: 4px;
+  border-left: 3px solid #28a745;
+}
+
+.feature-name {
   font-weight: 500;
+  color: #495057;
 }
 
-/* Fix for specific layout issues */
-main {
-  position: relative;
-  min-height: calc(100vh - 80px); /* Adjust based on your header height */
+.feature-value {
+  font-weight: bold;
+  color: #007bff;
 }
 
-/* Ensure proper view when scrolling to results */
-@media screen and (max-width: 768px) {
-  .results-section {
-    margin-top: 1rem;
-    padding: 1rem;
-  }
+/* Security Recommendations */
+.security-recommendations {
+  margin: 15px 0;
+}
 
-  .result-card {
-    padding: 1rem;
-  }
+.recommendation {
+  padding: 15px;
+  border-radius: 8px;
+  margin: 10px 0;
+}
+
+.recommendation.high-risk {
+  background: #f8d7da;
+  border-left: 4px solid #dc3545;
+  color: #721c24;
+}
+
+.recommendation.medium-risk {
+  background: #fff3cd;
+  border-left: 4px solid #ffc107;
+  color: #856404;
+}
+
+.recommendation.low-risk {
+  background: #d4edda;
+  border-left: 4px solid #28a745;
+  color: #155724;
+}
+
+.recommendation.unknown-risk {
+  background: #e2e3e5;
+  border-left: 4px solid #6c757d;
+  color: #383d41;
+}
+
+.recommendation ul {
+  margin: 10px 0;
+  padding-left: 20px;
+}
+
+.recommendation li {
+  margin: 5px 0;
+  line-height: 1.4;
+}
+
+/* Make modal wider for detailed view */
+.modal-content {
+  max-width: 800px;
+  width: 90%;
 }

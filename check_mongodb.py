@@ -4,18 +4,31 @@ import json
 from datetime import datetime
 import sys
 import os
+from dotenv import load_dotenv
 
-# MongoDB connection details (update with your actual connection info)
-MONGO_URL = os.getenv("MONGO_URL", "mongodb+srv://mainUser:8nLh3v2H1A0iVfr1@cluster0.nipyff1.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")  # Change if using a different connection string
-DB_NAME = os.getenv("DB_NAME", "phishing_detector")  # Replace with your database name
-COLLECTION_NAME = "scan_history"  # Replace with your collection name
+# Load environment variables
+load_dotenv()
+
+# MongoDB connection details from environment variables ONLY
+MONGO_URL = os.getenv("MONGO_URL")
+DB_NAME = os.getenv("DB_NAME", "phishing_detector")
+COLLECTION_NAME = os.getenv("COLLECTION_NAME", "scan_history")
 
 def check_latest_records():
+    if not MONGO_URL:
+        print("❌ MONGO_URL environment variable not set")
+        print("Please check your .env file")
+        sys.exit(1)
+        
     try:
         # Connect to MongoDB
         client = MongoClient(MONGO_URL)
         db = client[DB_NAME]
         collection = db[COLLECTION_NAME]
+        
+        # Test connection first
+        client.admin.command('ping')
+        print("✅ Connected to MongoDB successfully")
         
         # Find 5 most recent records
         records = list(collection.find().sort("timestamp", -1).limit(5))
@@ -58,12 +71,13 @@ def check_latest_records():
             if has_final_confidence:
                 print(f"Final Confidence: {record['final_confidence']}")
             if has_url_features:
-                print(f"URL Features: {json.dumps(record['url_features'], indent=2)}")
+                print(f"URL Features: {json.dumps(record['url_features'], indent=2)[:200]}...")
             
             print("-" * 50)
             
     except Exception as e:
-        print(f"Error connecting to MongoDB: {e}")
+        print(f"❌ Error connecting to MongoDB: {e}")
+        print("Please check your connection string and credentials")
         sys.exit(1)
 
 if __name__ == "__main__":

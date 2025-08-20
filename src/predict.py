@@ -5,6 +5,26 @@ import numpy as np
 from pathlib import Path
 import logging
 
+# Simulated external API calls for testing purposes
+# These functions simulate external API calls for testing purposes.
+def get_virustotal_report(url):
+    """Simulated VirusTotal report for testing"""
+    # TODO: Replace with real API call
+    return {
+        'malicious': 0,
+        'suspicious': 1,
+        'clean': 67,
+        'total': 68
+    }
+
+def get_google_safe_browsing(url):
+    """Simulated Google Safe Browsing for testing"""
+    # TODO: Replace with real API call
+    return {
+        'threats_found': 0,
+        'threat_types': []
+    }
+
 # Add project root to Python path
 import sys
 project_root = str(Path(__file__).parent.parent)
@@ -107,6 +127,12 @@ def classify_url(url, model, pipeline, fetch_params=None):
     threat_level = determine_threat_level(label, probabilities, url_features)
     final_confidence = calculate_final_confidence(probabilities, url_features)
     
+    # Add threat intelligence to the result
+    threat_intel = {
+    'virustotal': get_virustotal_report(url),
+    'google_safe_browsing': get_google_safe_browsing(url)
+    }
+
     # Create enhanced result
     result = {
         'url': url,
@@ -118,7 +144,8 @@ def classify_url(url, model, pipeline, fetch_params=None):
         },
         'threat_level': threat_level,
         'final_confidence': final_confidence,
-        'url_features': url_features
+        'url_features': url_features,
+        'threat_intelligence': threat_intel  # ← ADD THIS LINE
     }
     
     return result
@@ -217,6 +244,11 @@ def classify_batch(urls, model, pipeline, fetch_params=None):
         threat_level = determine_threat_level(label, probabilities, url_features)
         final_confidence = calculate_final_confidence(probabilities, url_features)
         
+        threat_intel = {
+        'virustotal': get_virustotal_report(url),
+        'google_safe_browsing': get_google_safe_browsing(url)
+        }
+
         # Create result
         result = {
             'url': url,
@@ -228,7 +260,8 @@ def classify_batch(urls, model, pipeline, fetch_params=None):
             },
             'threat_level': threat_level,
             'final_confidence': final_confidence,
-            'url_features': url_features
+            'url_features': url_features,
+            'threat_intelligence': threat_intel
         }
         
         results.append(result)

@@ -31,7 +31,7 @@ function showBatchDetails(index) {
   }
 
   // Get the batch results data
-  const resultsData = window.batchResultsData || [];
+  const resultsData = window.batchResults || window.batchResultsData || [];
 
   // Check if we have data for this index
   if (!resultsData[index]) {
@@ -90,13 +90,30 @@ function showBatchDetails(index) {
   riskLabel.textContent = urlData.risk || "Unknown";
   detailsCard.appendChild(riskLabel);
 
-  // Add confidence meter
+  // Add confidence meter - FIXED VERSION
   const confidenceSection = document.createElement("div");
   confidenceSection.className = "confidence-section";
 
+  // Calculate confidence from real API data
+  let confidence = 0;
+
+  if (urlData.final_confidence) {
+    confidence = Math.round(urlData.final_confidence * 100);
+  } else if (urlData.probabilities) {
+    // Get the highest probability as confidence
+    const probValues = Object.values(urlData.probabilities);
+    confidence = Math.round(Math.max(...probValues) * 100);
+  } else if (urlData.error) {
+    confidence = 0; // No confidence for failed analyses
+  } else {
+    confidence = 50; // Default confidence for unknown cases
+  }
+
+  console.log("Calculated confidence:", confidence, "from data:", urlData);
+
   const confidenceLabel = document.createElement("div");
   confidenceLabel.className = "confidence-label";
-  confidenceLabel.innerHTML = "<span>Confidence Level</span><span>" + (urlData.confidence || "0") + "%</span>";
+  confidenceLabel.innerHTML = "<span>Confidence Level</span><span>" + confidence + "%</span>";
   confidenceSection.appendChild(confidenceLabel);
 
   const confidenceMeter = document.createElement("div");
@@ -104,9 +121,20 @@ function showBatchDetails(index) {
 
   const confidenceFill = document.createElement("div");
   confidenceFill.className = "confidence-fill";
-  confidenceFill.style.width = (urlData.confidence || "0") + "%";
-  confidenceMeter.appendChild(confidenceFill);
+  confidenceFill.style.width = confidence + "%";
 
+  // Set color based on confidence level
+  if (confidence >= 80) {
+    confidenceFill.style.backgroundColor = "#22c55e"; // Green
+  } else if (confidence >= 60) {
+    confidenceFill.style.backgroundColor = "#3b82f6"; // Blue
+  } else if (confidence >= 40) {
+    confidenceFill.style.backgroundColor = "#f59e0b"; // Orange
+  } else {
+    confidenceFill.style.backgroundColor = "#ef4444"; // Red
+  }
+
+  confidenceMeter.appendChild(confidenceFill);
   confidenceSection.appendChild(confidenceMeter);
   detailsCard.appendChild(confidenceSection);
 
@@ -115,11 +143,24 @@ function showBatchDetails(index) {
   quickStats.className = "quick-stats";
 
   // Add stats if available in your data structure
+  // With this updated version:
   const statItems = [
-    { label: "ML Prediction", value: urlData.mlPrediction || "--" },
-    { label: "Threat Intel", value: urlData.threatIntel || "--" },
-    { label: "URL Analysis", value: urlData.urlAnalysis || "--" },
-    { label: "Domain Age", value: urlData.domainAge || "--" }
+    {
+      label: "ML Prediction",
+      value: urlData.error ? "Failed to analyze" : urlData.class_name || "Unknown"
+    },
+    {
+      label: "Threat Intel",
+      value: urlData.threat_level ? `${urlData.threat_level} risk` : "--"
+    },
+    {
+      label: "URL Analysis",
+      value: urlData.url_features ? "Analyzed" : "--"
+    },
+    {
+      label: "Domain Age",
+      value: urlData.url_features?.domain_age_days ? (urlData.url_features.domain_age_days < 30 ? `${urlData.url_features.domain_age_days} days` : "Established") : "--"
+    }
   ];
 
   statItems.forEach((stat) => {
@@ -219,7 +260,7 @@ function showBatchDetails(index) {
 
   const recommendationText = document.createElement("div");
   recommendationText.className = "recommendation-text";
-  recommendationText.textContent = urlData.recommendation || "No recommendation available.";
+  recommendationText.textContent = urlData.error ? "UNKNOWN: Could not fully analyze this URL. Proceed with caution." : urlData.threat_level === "low" ? "This URL appears to be safe based on available analysis." : "Exercise caution with this URL.";
 
   recommendationSection.appendChild(recommendationHeader);
   recommendationSection.appendChild(recommendationText);
@@ -245,17 +286,17 @@ function initializeBatchScanHandlers() {
   console.log("Initializing batch scan handlers");
 
   document.addEventListener("DOMContentLoaded", function () {
-    // Set up the batch scan form
-    const batchScanForm = document.getElementById("batch-scan-form");
-    if (batchScanForm) {
-      batchScanForm.addEventListener("submit", function (e) {
-        e.preventDefault();
-        const batchUrlInput = document.getElementById("batch-url-input");
-        if (batchUrlInput && batchUrlInput.value) {
-          processBatchScan(batchUrlInput.value);
-        }
-      });
-    }
+    // // Set up the batch scan form
+    // const batchScanForm = document.getElementById("batch-scan-form");
+    // if (batchScanForm) {
+    //   batchScanForm.addEventListener("submit", function (e) {
+    //     e.preventDefault();
+    //     const batchUrlInput = document.getElementById("batch-url-input");
+    //     if (batchUrlInput && batchUrlInput.value) {
+    //       processBatchScan(batchUrlInput.value);
+    //     }
+    //   });
+    // }
 
     // Set up the CSV upload form
     const csvUploadForm = document.getElementById("csv-upload-form");
@@ -287,65 +328,65 @@ function initializeBatchScanHandlers() {
  *
  * @param {string} urlsText - Text containing URLs (one per line)
  */
-function processBatchScan(urlsText) {
-  console.log("Processing batch scan");
+// function processBatchScan(urlsText) {
+//   console.log("Processing batch scan");
 
-  // Split text into URLs
-  const urls = urlsText
-    .split("\n")
-    .map((url) => url.trim())
-    .filter((url) => url && url.length > 0);
+//   // Split text into URLs
+//   const urls = urlsText
+//     .split("\n")
+//     .map((url) => url.trim())
+//     .filter((url) => url && url.length > 0);
 
-  if (urls.length === 0) {
-    alert("Please enter at least one URL to scan");
-    return;
-  }
+//   if (urls.length === 0) {
+//     alert("Please enter at least one URL to scan");
+//     return;
+//   }
 
-  // Show loading indicator
-  // TODO: Add a loading spinner or progress indicator
+//   // Show loading indicator
+//   // TODO: Add a loading spinner or progress indicator
 
-  // Simulate API call
-  setTimeout(function () {
-    // Generate sample results (replace with actual API call)
-    const results = urls.map((url) => ({
-      url: url,
-      risk: ["High", "Medium", "Low"][Math.floor(Math.random() * 3)],
-      confidence: Math.floor(Math.random() * 40) + 60, // 60-99
-      mlPrediction: Math.random() > 0.3 ? "Legitimate" : "Suspicious",
-      threatIntel: Math.random() > 0.3 ? "No threats" : "Some signals",
-      urlAnalysis: Math.random() > 0.3 ? "Normal" : "Unusual patterns",
-      domainAge: ["2 days", "6 months", "1+ year", "5+ years"][Math.floor(Math.random() * 4)],
-      threatSources: [
-        {
-          name: "VirusTotal",
-          status: Math.random() > 0.3 ? "safe" : "suspicious",
-          statusText: Math.random() > 0.3 ? "Clean" : "Suspicious"
-        },
-        {
-          name: "Google Safe Browsing",
-          status: Math.random() > 0.4 ? "safe" : "malicious",
-          statusText: Math.random() > 0.4 ? "No threats" : "Malicious"
-        }
-      ],
-      features: [
-        {
-          name: "Domain Age",
-          status: Math.random() > 0.3 ? "safe" : "suspicious",
-          value: Math.random() > 0.3 ? "5+ years" : "2 months"
-        },
-        {
-          name: "SSL Certificate",
-          status: Math.random() > 0.3 ? "safe" : "suspicious",
-          value: Math.random() > 0.3 ? "Valid (EV)" : "Self-signed"
-        }
-      ],
-      recommendation: Math.random() > 0.3 ? "This URL appears to be safe. You can proceed with confidence." : "Exercise caution with this URL. Several suspicious patterns were detected."
-    }));
+//   // Simulate API call
+//   setTimeout(function () {
+//     // Generate sample results (replace with actual API call)
+//     const results = urls.map((url) => ({
+//       url: url,
+//       risk: ["High", "Medium", "Low"][Math.floor(Math.random() * 3)],
+//       confidence: Math.floor(Math.random() * 40) + 60, // 60-99
+//       mlPrediction: Math.random() > 0.3 ? "Legitimate" : "Suspicious",
+//       threatIntel: Math.random() > 0.3 ? "No threats" : "Some signals",
+//       urlAnalysis: Math.random() > 0.3 ? "Normal" : "Unusual patterns",
+//       domainAge: ["2 days", "6 months", "1+ year", "5+ years"][Math.floor(Math.random() * 4)],
+//       threatSources: [
+//         {
+//           name: "VirusTotal",
+//           status: Math.random() > 0.3 ? "safe" : "suspicious",
+//           statusText: Math.random() > 0.3 ? "Clean" : "Suspicious"
+//         },
+//         {
+//           name: "Google Safe Browsing",
+//           status: Math.random() > 0.4 ? "safe" : "malicious",
+//           statusText: Math.random() > 0.4 ? "No threats" : "Malicious"
+//         }
+//       ],
+//       features: [
+//         {
+//           name: "Domain Age",
+//           status: Math.random() > 0.3 ? "safe" : "suspicious",
+//           value: Math.random() > 0.3 ? "5+ years" : "2 months"
+//         },
+//         {
+//           name: "SSL Certificate",
+//           status: Math.random() > 0.3 ? "safe" : "suspicious",
+//           value: Math.random() > 0.3 ? "Valid (EV)" : "Self-signed"
+//         }
+//       ],
+//       recommendation: Math.random() > 0.3 ? "This URL appears to be safe. You can proceed with confidence." : "Exercise caution with this URL. Several suspicious patterns were detected."
+//     }));
 
-    // Update the UI with results
-    initializeBatchResults(results);
-  }, 2000);
-}
+//     // Update the UI with results
+//     initializeBatchResults(results);
+//   }, 2000);
+// }
 
 /**
  * Process CSV upload
@@ -392,13 +433,28 @@ function filterBatchResults() {
 
   // Show or hide based on filter
   resultItems.forEach((item) => {
-    const risk = item.querySelector(".url-status").textContent.toLowerCase();
+    // FIXED: Look for the right class and text content
+    const statusElement = item.querySelector(".url-status");
+    if (!statusElement) return;
 
-    if (filterValue === "all" || (filterValue === "high" && risk === "high") || (filterValue === "medium" && risk === "medium") || (filterValue === "safe" && risk === "low")) {
-      item.style.display = "flex";
-    } else {
-      item.style.display = "none";
+    const risk = statusElement.textContent.toLowerCase().trim();
+    console.log(`Item risk: "${risk}", Filter: "${filterValue}"`);
+
+    let showItem = false;
+
+    if (filterValue === "all") {
+      showItem = true;
+    } else if (filterValue === "high" && risk.includes("high")) {
+      showItem = true;
+    } else if (filterValue === "medium" && risk.includes("medium")) {
+      showItem = true;
+    } else if (filterValue === "safe" && (risk.includes("safe") || risk.includes("low"))) {
+      showItem = true;
+    } else if (filterValue === "suspicious" && risk.includes("suspicious")) {
+      showItem = true;
     }
+
+    item.style.display = showItem ? "flex" : "none";
   });
 }
 
@@ -447,90 +503,110 @@ function sortBatchResults() {
  * @param {Array} resultsData - Array of result objects
  */
 function initializeBatchResults(resultsData) {
-  console.log("Initializing batch results with data:", resultsData);
+  console.log("Initializing batch results with REAL API data:", resultsData);
 
-  // Store the results data for later use
   window.batchResultsData = resultsData || [];
+  window.batchResults = resultsData || [];
 
-  // Update summary stats FIRST
-  updateBatchSummary(resultsData);
-
-  // Get the batch results container
   const batchResults = document.getElementById("batch-results");
   if (!batchResults) {
     console.error("Batch results container not found");
     return;
   }
 
-  // Clear previous results
   batchResults.innerHTML = "";
 
-  // Update summary statistics
-  updateBatchSummary(window.batchResultsData);
-
-  // Generate result items
   window.batchResultsData.forEach((result, index) => {
-    // Create result item
     const resultItem = document.createElement("div");
     resultItem.className = "batch-result-item";
 
-    // Add risk indicator
-    const riskIndicator = document.createElement("div");
-    riskIndicator.className = "risk-indicator " + (result.risk || "").toLowerCase();
-    resultItem.appendChild(riskIndicator);
+    // Improved risk classification based on both ML and threat intel
+    let displayRisk = "Unknown";
+    let riskClass = "unknown";
 
-    // Add URL info
-    const urlInfo = document.createElement("div");
-    urlInfo.className = "url-info";
+    if (result.error) {
+      displayRisk = "Suspicious";
+      riskClass = "suspicious";
+    } else {
+      // First check threat level from threat intelligence
+      const threatLevel = (result.threat_level || "").toLowerCase();
+      if (threatLevel === "high" || threatLevel === "critical") {
+        displayRisk = "High Risk";
+        riskClass = "high";
+      } else if (threatLevel === "medium") {
+        displayRisk = "Medium Risk";
+        riskClass = "medium";
+      } else if (result.class_name) {
+        // Then consider ML classification
+        switch (result.class_name.toLowerCase()) {
+          case "legitimate":
+            if (threatLevel === "low" || threatLevel === "safe") {
+              displayRisk = "Safe";
+              riskClass = "safe";
+            } else {
+              displayRisk = "Suspicious";
+              riskClass = "suspicious";
+            }
+            break;
+          case "phishing":
+          case "credential phishing":
+          case "malware":
+          case "malware distribution":
+            displayRisk = "High Risk";
+            riskClass = "high";
+            break;
+          default:
+            displayRisk = "Suspicious";
+            riskClass = "suspicious";
+        }
+      } else {
+        displayRisk = "Suspicious";
+        riskClass = "suspicious";
+      }
+    }
 
-    const urlText = document.createElement("div");
-    urlText.className = "url-text";
-    urlText.textContent = result.url || "Unknown URL";
+    // Calculate confidence score
+    let confidence = 0;
+    if (result.final_confidence !== undefined) {
+      confidence = Math.round(result.final_confidence * 100);
+    } else if (result.url_confidence_score !== undefined) {
+      confidence = Math.round(result.url_confidence_score * 100);
+    } else if (result.probabilities) {
+      confidence = Math.round(Math.max(...Object.values(result.probabilities)) * 100);
+    }
 
-    const urlStatus = document.createElement("div");
-    urlStatus.className = "url-status " + (result.risk || "").toLowerCase();
-    urlStatus.textContent = result.risk || "Unknown";
+    // Create UI elements
+    resultItem.innerHTML = `
+      <div class="risk-indicator ${riskClass}"></div>
+      <div class="url-info">
+        <div class="url-text">${result.url || "Unknown URL"}</div>
+        <div class="url-status ${riskClass}">${displayRisk}</div>
+      </div>
+      <div class="confidence-indicator">${confidence}%</div>
+      <div class="batch-actions-cell">
+        <button class="batch-action" data-index="${index}">Details</button>
+      </div>
+    `;
 
-    urlInfo.appendChild(urlText);
-    urlInfo.appendChild(urlStatus);
-    resultItem.appendChild(urlInfo);
-
-    // Add confidence
-    const confidenceIndicator = document.createElement("div");
-    confidenceIndicator.className = "confidence-indicator";
-    confidenceIndicator.textContent = (result.confidence || "0") + "%";
-    resultItem.appendChild(confidenceIndicator);
-
-    // Add actions
-    const actions = document.createElement("div");
-    actions.className = "batch-actions-cell";
-
-    const detailsButton = document.createElement("button");
-    detailsButton.className = "batch-action";
-    detailsButton.textContent = "Details";
-    detailsButton.dataset.index = index; // Store the index in a data attribute
-
-    // Use addEventListener instead of onclick
-    detailsButton.addEventListener("click", function (e) {
+    // Add click handler for details button
+    const detailsButton = resultItem.querySelector(".batch-action");
+    detailsButton.addEventListener("click", (e) => {
       e.preventDefault();
       e.stopPropagation();
-      showBatchDetails(parseInt(this.dataset.index));
+      showBatchDetails(index);
     });
 
-    actions.appendChild(detailsButton);
-    resultItem.appendChild(actions);
-
-    // Add to container
     batchResults.appendChild(resultItem);
   });
+
+  // Update summary with real data
+  updateBatchSummary(window.batchResultsData);
 
   // Show the dashboard
   const batchDashboard = document.getElementById("batch-dashboard");
   if (batchDashboard) {
     batchDashboard.classList.remove("hidden");
   }
-
-  console.log("Batch results initialized successfully");
 }
 
 /**
@@ -538,68 +614,78 @@ function initializeBatchResults(resultsData) {
  */
 
 function updateBatchSummary(resultsData) {
-  console.log("Updating batch summary stats with data:", resultsData);
+  console.log("=== phishr_batch_scan.js updateBatchSummary called ===");
+  console.log("ResultsData:", resultsData);
 
-  // Count risk levels
   const stats = {
     total: resultsData.length,
     high: 0,
     medium: 0,
-    safe: 0
+    safe: 0,
+    suspicious: 0 // Added suspicious category
   };
 
-  // Count URLs by risk level
   resultsData.forEach((result) => {
-    const risk = (result.risk || "").toLowerCase();
+    console.log("Processing result:", result);
 
-    // Check for various risk level terms
-    if (risk.includes("high") || risk.includes("critical") || risk.includes("severe")) {
-      stats.high++;
-    } else if (risk.includes("medium") || risk.includes("moderate") || risk.includes("warning")) {
-      stats.medium++;
-    } else if (risk.includes("low") || risk.includes("safe") || risk.includes("minimal")) {
-      stats.safe++;
+    // Check if this is a failed analysis or unknown result
+    if (result.error || !result.class_name || result.class_name === null) {
+      stats.suspicious++; // Count as suspicious instead of safe
+      console.log("Counted as suspicious (error/unknown)");
+      return;
     }
-    // If none match, default to counting as "safe"
-    else {
-      stats.safe++;
+
+    const threatLevel = result.threat_level || "unknown";
+    console.log(`Threat level: ${threatLevel}`);
+
+    switch (threatLevel.toLowerCase()) {
+      case "high":
+      case "critical":
+        stats.high++;
+        console.log("Counted as high risk");
+        break;
+      case "medium":
+        stats.medium++;
+        console.log("Counted as medium risk");
+        break;
+      case "low":
+      case "safe":
+        // Only count as safe if ML actually classified it as legitimate
+        if (result.class_name.toLowerCase() === "legitimate") {
+          stats.safe++;
+          console.log("Counted as safe (legitimate)");
+        } else {
+          stats.suspicious++;
+          console.log("Counted as suspicious (non-legitimate)");
+        }
+        break;
+      default:
+        stats.suspicious++;
+        console.log("Counted as suspicious (default case)");
+        break;
     }
   });
 
-  console.log("Calculated summary stats:", stats);
+  console.log("Final stats:", stats);
 
-  // Update summary stats in the UI
-  const totalUrls = document.getElementById("total-urls");
-  if (totalUrls) {
-    console.log("Setting total-urls to:", stats.total);
-    totalUrls.textContent = stats.total;
-  } else {
-    console.error("Element 'total-urls' not found");
-  }
+  // Update UI elements with error checking
+  const elements = {
+    "total-urls": stats.total,
+    "high-risk": stats.high,
+    "medium-risk": stats.medium,
+    "safe-urls": stats.safe,
+    "suspicious-urls": stats.suspicious
+  };
 
-  const highRisk = document.getElementById("high-risk");
-  if (highRisk) {
-    console.log("Setting high-risk to:", stats.high);
-    highRisk.textContent = stats.high;
-  } else {
-    console.error("Element 'high-risk' not found");
-  }
-
-  const mediumRisk = document.getElementById("medium-risk");
-  if (mediumRisk) {
-    console.log("Setting medium-risk to:", stats.medium);
-    mediumRisk.textContent = stats.medium;
-  } else {
-    console.error("Element 'medium-risk' not found");
-  }
-
-  const safeUrls = document.getElementById("safe-urls");
-  if (safeUrls) {
-    console.log("Setting safe-urls to:", stats.safe);
-    safeUrls.textContent = stats.safe;
-  } else {
-    console.error("Element 'safe-urls' not found");
-  }
+  Object.entries(elements).forEach(([id, value]) => {
+    const element = document.getElementById(id);
+    if (element) {
+      element.textContent = value;
+      console.log(`Updated ${id} to ${value}`);
+    } else {
+      console.warn(`Element with id '${id}' not found`);
+    }
+  });
 }
 
 /**
@@ -668,3 +754,18 @@ function updateBatchSummary(resultsData) {
 
 // Initialize everything
 initializeBatchScanHandlers();
+
+/**
+ * Update the progress bar display
+ *
+ * @param {number} processed - Number of processed items
+ * @param {number} total - Total number of items
+ */
+function updateProgress(processed, total) {
+  const progress = (processed / total) * 100;
+  const progressBar = document.querySelector(".progress-bar");
+  if (progressBar) {
+    progressBar.style.width = `${progress}%`;
+    progressBar.textContent = `${Math.round(progress)}%`;
+  }
+}

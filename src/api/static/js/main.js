@@ -242,199 +242,168 @@ function displayResults(data) {
   const resultsSection = document.getElementById("results-section");
   const resultsContainer = document.getElementById("results-container");
 
-  // Ensure the results section exists before proceeding
-  if (!resultsSection || !resultsContainer) {
-    console.error("Results elements not found");
-    return;
-  }
+  if (!resultsSection || !resultsContainer) return;
 
-  // Show results section
+  resultsContainer.innerHTML = "";
   resultsSection.style.display = "block";
 
-  // Clear previous results
-  resultsContainer.innerHTML = "";
-
-  // Check if there's an error
-  if (data.error) {
-    // Create error-specific result card
-    const errorCard = document.createElement("div");
-    errorCard.className = "result-card error-card";
-
-    // Check if it's a fetch error
-    if (data.error.includes("Failed to fetch content")) {
-      errorCard.innerHTML = `
-              <div class="result-header">
-                  <span class="result-icon">⚠️</span>
-                  <h3 class="result-title">Failed to Fetch Content</h3>
-              </div>
-              <div class="result-details">
-                  <p class="result-url"><strong>URL:</strong> ${data.url}</p>
-                  <p class="error-explanation">Unable to access the website content for analysis. This may be due to:</p>
-                  <ul class="error-reasons">
-                      <li>Network connectivity issues</li>
-                      <li>Website temporarily unavailable</li>
-                      <li>SSL/TLS certificate problems</li>
-                      <li>Access restrictions on the target site</li>
-                  </ul>
-                  <p class="error-note">Please try again later or verify the URL is correct.</p>
-              </div>
-          `;
-    } else {
-      // Generic error message
-      errorCard.innerHTML = `
-              <div class="result-header">
-                  <span class="result-icon">❌</span>
-                  <h3 class="result-title">Error</h3>
-              </div>
-              <div class="result-details">
-                  <p class="error-message">${data.error}</p>
-              </div>
-          `;
-    }
-
-    resultsContainer.appendChild(errorCard);
-    return;
-  }
-
-  // Create result card for successful scan
   const resultCard = document.createElement("div");
   resultCard.className = "result-card";
 
-  // Determine result styling based on class - CASE INSENSITIVE COMPARISON
-  let resultClass = "neutral";
-  let resultIcon = "❓";
-  let resultMessage = "Unknown";
-
-  // Convert to lowercase for case-insensitive comparison
-  const className = data.class_name ? data.class_name.toLowerCase() : "";
-
-  // Check for specific classifications
-  if (className === "legitimate") {
-    resultClass = "safe";
-    resultIcon = "✅";
-    resultMessage = "This URL appears to be legitimate";
-  } else if (className === "phishing" || className === "credential phishing") {
-    resultClass = "dangerous";
-    resultIcon = "⚠️";
-    resultMessage = "Warning: This URL may be a credential phishing attempt";
-  } else if (className === "malware" || className === "malware distribution") {
-    resultClass = "dangerous";
-    resultIcon = "🛑";
-    resultMessage = "Danger: This URL may contain malware";
+  // Handle Unknown results with detailed explanations
+  if (data.class_name === "Unknown" || data.class_name === null) {
+    resultCard.innerHTML = createUnknownResultDisplay(data);
+  } else {
+    resultCard.innerHTML = createNormalResultDisplay(data);
   }
 
-  // If classification is still unknown, but we have probabilities, use the highest one
-  if (resultClass === "neutral" && data.probabilities) {
-    let highestProb = 0;
-    let highestClass = "Unknown";
-
-    for (const [className, probability] of Object.entries(data.probabilities)) {
-      if (probability > highestProb) {
-        highestProb = probability;
-        highestClass = className;
-      }
-    }
-
-    // If we found a high probability class, use that
-    if (highestProb > 0.3) {
-      // 30% threshold
-      const highClassName = highestClass.toLowerCase();
-      if (highClassName === "legitimate") {
-        resultClass = "safe";
-        resultIcon = "✅";
-        resultMessage = "This URL appears to be legitimate";
-      } else if (highClassName === "phishing" || highClassName === "credential phishing") {
-        resultClass = "dangerous";
-        resultIcon = "⚠️";
-        resultMessage = "Warning: This URL may be a credential phishing attempt";
-      } else if (highClassName === "malware" || highClassName === "malware distribution") {
-        resultClass = "dangerous";
-        resultIcon = "🛑";
-        resultMessage = "Danger: This URL may contain malware";
-      }
-    }
-  }
-
-  // Add class to card
-  resultCard.classList.add(resultClass);
-
-  // Normalize the class name for display
-  let displayClassification = data.class_name || "Unknown";
-  if (displayClassification.toLowerCase() === "phishing") {
-    displayClassification = "Credential Phishing";
-  } else if (displayClassification.toLowerCase() === "credential phishing") {
-    displayClassification = "Credential Phishing";
-  }
-
-  // Create HTML for result
-  resultCard.innerHTML = `
-      <div class="result-header">
-          <span class="result-icon">${resultIcon}</span>
-          <h3 class="result-title">${resultMessage}</h3>
-      </div>
-      <div class="result-details">
-          <p class="result-url"><strong>URL:</strong> ${data.url}</p>
-          <p class="result-classification"><strong>Classification:</strong> ${displayClassification}</p>
-          <div class="result-probabilities">
-              <p><strong>Confidence:</strong></p>
-              ${createProbabilityBars(data.probabilities)}
-          </div>
-      </div>
-  `;
-
-  // Add to results container
   resultsContainer.appendChild(resultCard);
-
-  // Scroll to results without interfering with the header
-  window.scrollTo({
-    top: resultsSection.offsetTop,
-    behavior: "smooth"
-  });
-
-  // Refresh scan history if available
-  setTimeout(() => {
-    if (typeof loadScanHistory === "function") {
-      loadScanHistory();
-    }
-  }, 1000);
+  resultsSection.scrollIntoView({ behavior: "smooth" });
 }
 
-/**
- * Create probability bars for displaying confidence levels
- */
-function createProbabilityBars(probabilities) {
-  if (!probabilities) return "<p>No probability data available</p>";
+function createUnknownResultDisplay(data) {
+  const errorDetails = data.error_details || {};
 
-  let barsHtml = "";
-
-  for (const [className, probability] of Object.entries(probabilities)) {
-    const percentage = Math.round(probability * 100);
-
-    // Normalize the class name for display
-    let displayClassName = className;
-    if (className.toLowerCase() === "phishing") {
-      displayClassName = "Credential Phishing";
-    } else if (className.toLowerCase() === "credential phishing") {
-      displayClassName = "Credential Phishing";
-    } else if (className.toLowerCase() === "malware distribution") {
-      displayClassName = "Malware Distribution";
-    } else {
-      // Capitalize first letter
-      displayClassName = className.charAt(0).toUpperCase() + className.slice(1);
-    }
-
-    barsHtml += `
-      <div class="probability-item">
-          <div class="probability-label">${displayClassName}</div>
-          <div class="probability-bar-container">
-              <div class="probability-bar" style="width: ${percentage}%"></div>
-              <div class="probability-value">${percentage}%</div>
+  return `
+    <div class="result-header unknown-result">
+      <span class="result-icon">❓</span>
+      <h3 class="result-title">Unable to Classify URL</h3>
+    </div>
+    
+    <div class="result-details">
+      <p class="result-url"><strong>URL:</strong> ${data.url}</p>
+      
+      <div class="error-explanation">
+        <h4>🔍 Why couldn't this URL be classified?</h4>
+        
+        <div class="error-reason">
+          <strong>Issue:</strong> ${errorDetails.reason || "Technical Error"}
+        </div>
+        
+        <div class="error-description">
+          <p>${errorDetails.explanation || "Unable to analyze this URL due to technical issues."}</p>
+        </div>
+        
+        ${
+          errorDetails.possible_causes
+            ? `
+          <div class="possible-causes">
+            <strong>Possible reasons:</strong>
+            <ul>
+              ${errorDetails.possible_causes.map((cause) => `<li>${cause}</li>`).join("")}
+            </ul>
           </div>
+        `
+            : ""
+        }
+        
+        ${
+          errorDetails.user_action
+            ? `
+          <div class="user-action">
+            <strong>💡 What you can do:</strong>
+            <p>${errorDetails.user_action}</p>
+          </div>
+        `
+            : ""
+        }
+        
+        <div class="security-recommendation">
+          <h5>🛡️ Security Recommendation:</h5>
+          <p>If you're unsure about this URL, <strong>avoid visiting it</strong> until you can verify its legitimacy through other means.</p>
+        </div>
       </div>
-      `;
-  }
+      
+      ${
+        data.url_features
+          ? `
+        <div class="url-analysis">
+          <h4>📊 URL Analysis (Available)</h4>
+          <p>While we couldn't fetch the website content, we were able to analyze the URL structure.</p>
+          <small>Features extracted: ${Object.keys(data.url_features).length}</small>
+        </div>
+      `
+          : ""
+      }
+      
+      <details class="technical-details">
+        <summary>🔧 Technical Details (for developers)</summary>
+        <pre>${data.error || "No technical details available"}</pre>
+      </details>
+    </div>
+  `;
+}
 
-  return barsHtml;
+function createNormalResultDisplay(data) {
+  const resultIcon = data.threat_level === "high" ? "🚨" : data.threat_level === "medium" ? "⚠️" : "✅";
+
+  const resultMessage = data.threat_level === "high" ? "High Risk Detected" : data.threat_level === "medium" ? "Medium Risk" : "Low Risk";
+
+  return `
+    <div class="result-header">
+      <span class="result-icon">${resultIcon}</span>
+      <h3 class="result-title">${resultMessage}</h3>
+    </div>
+    
+    <div class="result-details">
+      <p class="result-url"><strong>URL:</strong> ${data.url}</p>
+      <p class="result-classification"><strong>Classification:</strong> ${data.class_name}</p>
+      
+      <!-- Your existing enhanced analysis display -->
+      <div class="enhanced-analysis">
+        <div class="threat-level-section">
+          <p><strong>Threat Level:</strong> 
+            <span class="threat-${data.threat_level || "unknown"}">${(data.threat_level || "unknown").toUpperCase()}</span>
+          </p>
+          <p><strong>Combined Confidence:</strong> ${data.final_confidence ? (data.final_confidence * 100).toFixed(1) + "%" : "N/A"}</p>
+        </div>
+        
+        <!-- Analysis Sources Breakdown -->
+        <div class="analysis-sources">
+          <h4>Analysis Sources:</h4>
+          <div class="source-item">
+            <span class="source-label">🤖 ML Analysis:</span>
+            <span>${data.class_name || "Failed"}</span>
+          </div>
+          <div class="source-item">
+            <span class="source-label">🛡️ VirusTotal:</span>
+            <span>${data.url_features?.virustotal_status || "Checked"}</span>
+          </div>
+        </div>
+      </div>
+      
+      ${
+        data.probabilities
+          ? `
+        <div class="result-probabilities">
+          <p><strong>ML Confidence Breakdown:</strong></p>
+          ${createProbabilityBars(data.probabilities)}
+        </div>
+      `
+          : ""
+      }
+    </div>
+  `;
+}
+
+// Add this helper function if it doesn't exist:
+
+function createProbabilityBars(probabilities) {
+  if (!probabilities) return "";
+
+  let html = "";
+  for (const [className, probability] of Object.entries(probabilities)) {
+    const percentage = (probability * 100).toFixed(1);
+    html += `
+      <div class="probability-bar">
+        <span class="probability-label">${className}: ${percentage}%</span>
+        <div class="probability-progress">
+          <div class="probability-fill" style="width: ${percentage}%"></div>
+        </div>
+      </div>
+    `;
+  }
+  return html;
 }
 
 // ====== BATCH URL SCANNER ======
@@ -755,130 +724,542 @@ function initializeBatchUrlScanner() {
 }
 
 /**
- * Process and display batch scan results with enhanced UI
+ * Process and display batch scan results with enhanced UI and error handling
  */
 function processBatchResults(results) {
-  // Check if enhanced UI elements exist
-  const batchDashboard = document.getElementById("batch-dashboard");
+  console.log("Processing batch results:", results);
 
-  if (batchDashboard) {
-    // Use enhanced UI if the dashboard element exists
-    displayBatchResults(results);
+  const resultsSection = document.getElementById("results-section");
+  let batchResultsContainer = document.getElementById("batch-results-container");
+
+  // Check if results section exists
+  if (!resultsSection) {
+    console.error("Results section not found");
+    showMessage("Error: Results section not found on page", "error");
     return;
   }
 
-  // Otherwise, use the original implementation
-  // Create a results section if it doesn't exist
-  let resultsSection = document.getElementById("batch-results-section");
+  // Create batch results container if it doesn't exist
+  if (!batchResultsContainer) {
+    console.log("Creating batch results container");
+    batchResultsContainer = document.createElement("div");
+    batchResultsContainer.id = "batch-results-container";
+    batchResultsContainer.className = "batch-results-container";
 
-  if (!resultsSection) {
-    resultsSection = document.createElement("section");
-    resultsSection.id = "batch-results-section";
-    resultsSection.className = "results-section";
-    resultsSection.innerHTML = `
-          <div class="container">
-              <h2>Batch Scan Results</h2>
-              <div id="batch-results-container" class="results-container"></div>
-          </div>
-      `;
-
-    // Add after the features section
-    const featuresSection = document.querySelector(".features");
-    if (featuresSection) {
-      featuresSection.after(resultsSection);
-    } else {
-      document.querySelector("main").appendChild(resultsSection);
-    }
+    // Add it to the results section
+    resultsSection.appendChild(batchResultsContainer);
   }
 
-  const batchResultsContainer = document.getElementById("batch-results-container");
-  if (!batchResultsContainer) return;
-
-  // Clear previous results
+  // Clear any existing content
   batchResultsContainer.innerHTML = "";
 
-  // Create table for results
-  const table = document.createElement("table");
-  table.className = "batch-results-table";
+  // Validate results
+  if (!results || !Array.isArray(results)) {
+    console.error("Invalid results data:", results);
+    showMessage("Error: Invalid results data received", "error");
+    return;
+  }
 
-  // Add table header
-  table.innerHTML = `
+  // Count results by status
+  const statusCounts = {
+    high: results.filter((r) => r && r.threat_level === "high").length,
+    medium: results.filter((r) => r && r.threat_level === "medium").length,
+    low: results.filter((r) => r && r.threat_level === "low").length,
+    unknown: results.filter((r) => r && (r.class_name === "Unknown" || r.class_name === null)).length
+  };
+
+  // Get unknown results for detailed display
+  const unknownResults = results.filter((r) => r && (r.class_name === "Unknown" || r.class_name === null));
+
+  console.log("Status counts:", statusCounts);
+  console.log("Unknown results:", unknownResults);
+
+  try {
+    // Create the batch results HTML
+    batchResultsContainer.innerHTML = `
+      <h3>🎯 Batch Analysis Results (${results.length} URLs)</h3>
+      
+      <div class="batch-summary">
+        <div class="summary-stats">
+          <div class="stat high-risk">🚨 High Risk: ${statusCounts.high}</div>
+          <div class="stat medium-risk">⚠️ Medium Risk: ${statusCounts.medium}</div>
+          <div class="stat low-risk">✅ Low Risk: ${statusCounts.low}</div>
+          <div class="stat unknown-risk">❓ Unknown: ${statusCounts.unknown}</div>
+        </div>
+      </div>
+      
+      ${
+        unknownResults.length > 0
+          ? `
+        <div class="batch-unknown-summary">
+          <h4>❓ ${unknownResults.length} URL(s) Could Not Be Classified</h4>
+          <p>The following URLs could not be analyzed due to technical issues:</p>
+          <div class="unknown-urls-list">
+            ${unknownResults
+              .map(
+                (result, index) => `
+              <div class="unknown-url-item">
+                <div class="url">${result.url || "Unknown URL"}</div>
+                <div class="reason">
+                  ${result.error_details?.reason || "Analysis failed"}: 
+                  ${result.error_details?.explanation || result.error || "Technical error occurred"}
+                </div>
+                <button class="details-btn small-btn" onclick="showUnknownDetailsModal('${result.url}', '${encodeURIComponent(JSON.stringify(result))}')">
+                  Why Unknown?
+                </button>
+              </div>
+            `
+              )
+              .join("")}
+          </div>
+          <p><strong>💡 Recommendation:</strong> Verify these URLs manually in your browser and be cautious if they don't load properly.</p>
+        </div>
+      `
+          : ""
+      }
+    `;
+
+    // Create and add the results table
+    const table = document.createElement("table");
+    table.className = "batch-results-table";
+    table.innerHTML = `
       <thead>
-          <tr>
-              <th>URL</th>
-              <th>Classification</th>
-              <th>Confidence</th>
-              <th>Status</th>
-          </tr>
+        <tr>
+          <th>URL</th>
+          <th>Classification</th>
+          <th>Threat Level</th>
+          <th>Combined Confidence</th>
+          <th>Status</th>
+          <th>Details</th>
+        </tr>
       </thead>
       <tbody></tbody>
-  `;
+    `;
 
-  const tbody = table.querySelector("tbody");
+    const tbody = table.querySelector("tbody");
 
-  // Add rows for each result
-  results.forEach((result) => {
-    const row = document.createElement("tr");
-
-    if (result.error) {
-      // Special handling for fetch errors
-      let errorStatusClass = "status-error";
-      let errorMessage = result.error;
-
-      if (result.error.includes("Failed to fetch content")) {
-        errorStatusClass = "status-fetch-error";
-        errorMessage = "Failed to fetch content";
+    results.forEach((result, index) => {
+      if (!result) {
+        console.warn("Skipping null result at index", index);
+        return;
       }
 
-      row.innerHTML = `
-              <td>${result.url}</td>
-              <td colspan="2">Error</td>
-              <td class="${errorStatusClass}" title="${result.error}">${errorMessage}</td>
-          `;
-    } else {
-      // Get highest probability class
-      let highestProb = 0;
-      let confidence = 0;
+      const row = document.createElement("tr");
+      const isUnknown = result.class_name === "Unknown" || result.class_name === null;
+      const statusClass = isUnknown ? "status-unknown" : result.threat_level === "high" ? "status-high-risk" : result.threat_level === "medium" ? "status-medium-risk" : "status-low-risk";
 
-      if (result.probabilities) {
-        for (const [className, probability] of Object.entries(result.probabilities)) {
-          if (probability > highestProb) {
-            highestProb = probability;
-            confidence = Math.round(probability * 100);
+      const combinedConfidence = result.final_confidence ? (result.final_confidence * 100).toFixed(1) + "%" : "N/A";
+
+      row.innerHTML = `
+        <td class="url-cell" title="${result.url || "Unknown URL"}">${result.url || "Unknown URL"}</td>
+        <td>${isUnknown ? "Unable to Classify" : result.class_name || "Unknown"}</td>
+        <td><span class="threat-${result.threat_level || "unknown"}">${(result.threat_level || "unknown").toUpperCase()}</span></td>
+        <td>${combinedConfidence}</td>
+        <td class="${statusClass}">${isUnknown ? "Analysis Failed" : "Analyzed"}</td>
+        <td>
+          ${
+            isUnknown
+              ? `
+            <button class="details-btn" onclick="showUnknownDetailsFromTable(${index})">
+              Why Unknown?
+            </button>
+          `
+              : `
+            <button class="details-btn" onclick="showResultDetails(${index})">
+              View Details
+            </button>
+          `
           }
-        }
-      }
+        </td>
+      `;
 
-      // Determine status class
-      let statusClass = "status-unknown";
-      if (result.class_name) {
-        const className = result.class_name.toLowerCase();
-        if (className === "legitimate") {
-          statusClass = "status-clean";
-        } else if (className === "phishing" || className === "malware" || className === "malware distribution") {
-          statusClass = "status-phishing";
-        }
-      }
+      tbody.appendChild(row);
+    });
 
-      // Determine display name
-      let displayName = result.class_name || "Unknown";
-      let statusDisplay = result.class_name === "legitimate" ? "Clean" : result.class_name || "Unknown";
+    batchResultsContainer.appendChild(table);
 
-      row.innerHTML = `
-              <td>${result.url}</td>
-              <td>${displayName}</td>
-              <td>${confidence}%</td>
-              <td class="${statusClass}">${statusDisplay}</td>
-          `;
+    // Show the results section and scroll to it
+    resultsSection.style.display = "block";
+    resultsSection.scrollIntoView({ behavior: "smooth" });
+
+    // Store results for detail functions
+    window.batchResults = results;
+
+    console.log("✅ Batch results displayed successfully");
+  } catch (error) {
+    console.error("Error displaying batch results:", error);
+    showMessage("Error displaying batch results: " + error.message, "error");
+  }
+}
+
+// Enhanced function to show unknown details from the table
+function showUnknownDetailsFromTable(index) {
+  if (!window.batchResults || !window.batchResults[index]) {
+    showMessage("Error: Result data not found", "error");
+    return;
+  }
+
+  const result = window.batchResults[index];
+  showUnknownDetailsModal(result.url, encodeURIComponent(JSON.stringify(result)));
+}
+
+// Function to show unknown details modal
+function showUnknownDetailsModal(url, encodedResult) {
+  console.log("Showing unknown details for:", url);
+
+  try {
+    const result = JSON.parse(decodeURIComponent(encodedResult));
+    const errorDetails = result.error_details || {};
+
+    // Create modal HTML with corrected close button
+    const modalHtml = `
+      <div class="modal-overlay">
+        <div class="modal-content" onclick="event.stopPropagation()">
+          <div class="modal-header">
+            <h3>❓ Why couldn't this URL be classified?</h3>
+            <button class="modal-close" onclick="closeModal(document.querySelector('.modal-overlay'))">&times;</button>
+          </div>
+          
+          <div class="modal-body">
+            <div class="modal-url">
+              <strong>URL:</strong> ${url || "Unknown"}
+            </div>
+            
+            <div class="modal-error-details">
+              <div class="error-reason">
+                <strong>Issue:</strong> ${errorDetails.reason || "Content Fetch Failed"}
+              </div>
+              
+              <div class="error-description">
+                <p>${errorDetails.explanation || "Unable to fetch and analyze website content. This could be due to various technical issues."}</p>
+              </div>
+              
+              <div class="possible-causes">
+                <strong>Possible reasons:</strong>
+                <ul>
+                  <li>Domain has expired or been taken down</li>
+                  <li>Domain is blocked by security filters</li>
+                  <li>DNS configuration issues</li>
+                  <li>Website is blocking automated requests</li>
+                  <li>Server is down or unreachable</li>
+                  <li>Potentially malicious domain that has been sinkholed</li>
+                </ul>
+              </div>
+              
+              <div class="user-action">
+                <strong>💡 What you can do:</strong>
+                <p>Try accessing the website directly in your browser to verify if it loads normally. Be cautious if it doesn't load - this could indicate a security risk.</p>
+              </div>
+              
+              <div class="security-recommendation">
+                <h5>🛡️ Security Recommendation:</h5>
+                <p>If you're unsure about this URL, <strong>avoid visiting it</strong> until you can verify its legitimacy.</p>
+              </div>
+              
+              ${
+                result.error
+                  ? `
+                <details class="technical-details">
+                  <summary>🔧 Technical Details</summary>
+                  <pre>${result.error}</pre>
+                </details>
+              `
+                  : ""
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    // Remove any existing modals
+    const existingModal = document.querySelector(".modal-overlay");
+    if (existingModal) {
+      existingModal.remove();
     }
 
-    tbody.appendChild(row);
-  });
+    // Add modal to page
+    document.body.insertAdjacentHTML("beforeend", modalHtml);
 
-  batchResultsContainer.appendChild(table);
+    // Add click outside to close functionality
+    const newModal = document.querySelector(".modal-overlay");
+    newModal.addEventListener("click", function (event) {
+      if (event.target === newModal) {
+        newModal.remove();
+      }
+    });
+  } catch (error) {
+    console.error("Error showing unknown details:", error);
+    showMessage("Error showing details: " + error.message, "error");
+  }
+}
 
-  // Scroll to results
-  resultsSection.scrollIntoView({ behavior: "smooth" });
+// Update the showResultDetails function similarly:
+function showResultDetails(index) {
+  if (!window.batchResults || !window.batchResults[index]) {
+    showMessage("Error: Result data not found", "error");
+    return;
+  }
+
+  const result = window.batchResults[index];
+  console.log("Showing result details for:", result.url);
+
+  try {
+    // Create detailed modal HTML for successful results with corrected close button
+    const modalHtml = `
+      <div class="modal-overlay">
+        <div class="modal-content" onclick="event.stopPropagation()">
+          <div class="modal-header">
+            <h3>🔍 Detailed Analysis Results</h3>
+            <button class="modal-close" onclick="closeModal(document.querySelector('.modal-overlay'))">&times;</button>
+          </div>
+          
+          <div class="modal-body">
+            <div class="modal-url">
+              <strong>URL:</strong> ${result.url || "Unknown"}
+            </div>
+            
+            <!-- Classification Summary -->
+            <div class="classification-summary">
+              <h4>📊 Classification Summary</h4>
+              <div class="summary-grid">
+                <div class="summary-item">
+                  <strong>Classification:</strong>
+                  <span class="classification-badge ${result.class_name?.toLowerCase().replace(" ", "-") || "unknown"}">
+                    ${result.class_name || "Unknown"}
+                  </span>
+                </div>
+                <div class="summary-item">
+                  <strong>Threat Level:</strong>
+                  <span class="threat-badge threat-${result.threat_level || "unknown"}">
+                    ${(result.threat_level || "unknown").toUpperCase()}
+                  </span>
+                </div>
+                <div class="summary-item">
+                  <strong>Combined Confidence:</strong>
+                  <span class="confidence-value">
+                    ${result.final_confidence ? (result.final_confidence * 100).toFixed(1) + "%" : "N/A"}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- ML Analysis Details -->
+            ${
+              result.probabilities
+                ? `
+              <div class="ml-analysis">
+                <h4>🤖 Machine Learning Analysis</h4>
+                <div class="probability-breakdown">
+                  ${Object.entries(result.probabilities)
+                    .map(
+                      ([className, probability]) => `
+                    <div class="probability-item">
+                      <div class="probability-header">
+                        <span class="class-name">${className}</span>
+                        <span class="probability-value">${(probability * 100).toFixed(1)}%</span>
+                      </div>
+                      <div class="probability-bar-container">
+                        <div class="probability-bar-fill" style="width: ${probability * 100}%; background-color: ${getProbabilityColor(className, probability)}"></div>
+                      </div>
+                    </div>
+                  `
+                    )
+                    .join("")}
+                </div>
+              </div>
+            `
+                : ""
+            }
+
+            <!-- Analysis Sources -->
+            <div class="analysis-sources">
+              <h4>🛡️ Analysis Sources</h4>
+              <div class="sources-grid">
+                <div class="source-item">
+                  <span class="source-icon">🤖</span>
+                  <div class="source-details">
+                    <strong>Machine Learning</strong>
+                    <small>${result.probabilities ? "Analysis completed" : "Analysis failed"}</small>
+                  </div>
+                </div>
+                <div class="source-item">
+                  <span class="source-icon">🛡️</span>
+                  <div class="source-details">
+                    <strong>VirusTotal</strong>
+                    <small>${result.url_features?.virustotal_status || "Checked"}</small>
+                  </div>
+                </div>
+                <div class="source-item">
+                  <span class="source-icon">🔧</span>
+                  <div class="source-details">
+                    <strong>URL Features</strong>
+                    <small>${result.url_features ? Object.keys(result.url_features).length + " features extracted" : "No features"}</small>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- URL Features (if available) -->
+            ${
+              result.url_features
+                ? `
+              <div class="url-features">
+                <h4>🔧 URL Features Analysis</h4>
+                <div class="features-grid">
+                  ${Object.entries(result.url_features)
+                    .slice(0, 8)
+                    .map(
+                      ([feature, value]) => `
+                    <div class="feature-item">
+                      <span class="feature-name">${formatFeatureName(feature)}:</span>
+                      <span class="feature-value">${formatFeatureValue(value)}</span>
+                    </div>
+                  `
+                    )
+                    .join("")}
+                  ${
+                    Object.keys(result.url_features).length > 8
+                      ? `
+                    <div class="feature-item">
+                      <span class="feature-name">... and ${Object.keys(result.url_features).length - 8} more features</span>
+                    </div>
+                  `
+                      : ""
+                  }
+                </div>
+              </div>
+            `
+                : ""
+            }
+
+            <!-- Security Recommendations -->
+            <div class="security-recommendations">
+              <h4>🛡️ Security Recommendations</h4>
+              ${getSecurityRecommendations(result)}
+            </div>
+
+            <!-- Technical Details -->
+            <details class="technical-details">
+              <summary>🔧 Technical Details</summary>
+              <pre>${JSON.stringify(result, null, 2)}</pre>
+            </details>
+          </div>
+        </div>
+      </div>
+    `;
+
+    // Remove any existing modals
+    const existingModal = document.querySelector(".modal-overlay");
+    if (existingModal) {
+      existingModal.remove();
+    }
+
+    // Add modal to page
+    document.body.insertAdjacentHTML("beforeend", modalHtml);
+
+    // Add click outside to close functionality
+    const newModal = document.querySelector(".modal-overlay");
+    newModal.addEventListener("click", function (event) {
+      if (event.target === newModal) {
+        newModal.remove();
+      }
+    });
+  } catch (error) {
+    console.error("Error showing result details:", error);
+    showMessage("Error showing details: " + error.message, "error");
+  }
+}
+
+/**
+ * Helper function to get probability bar color
+ */
+function getProbabilityColor(className, probability) {
+  if (className.toLowerCase().includes("legitimate")) {
+    return `hsl(120, ${probability * 100}%, 40%)`; // Green for legitimate
+  } else if (className.toLowerCase().includes("phishing")) {
+    return `hsl(0, ${probability * 100}%, 50%)`; // Red for phishing
+  } else if (className.toLowerCase().includes("malware")) {
+    return `hsl(15, ${probability * 100}%, 45%)`; // Orange-red for malware
+  } else {
+    return `hsl(200, ${probability * 100}%, 50%)`; // Blue for others
+  }
+}
+
+/**
+ * Helper function to format feature names
+ */
+function formatFeatureName(feature) {
+  return feature.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
+}
+
+/**
+ * Helper function to format feature values
+ */
+function formatFeatureValue(value) {
+  if (typeof value === "boolean") {
+    return value ? "Yes" : "No";
+  } else if (typeof value === "number") {
+    return Number.isInteger(value) ? value.toString() : value.toFixed(2);
+  } else {
+    return value?.toString() || "N/A";
+  }
+}
+
+/**
+ * Helper function to get security recommendations based on results
+ */
+function getSecurityRecommendations(result) {
+  const threatLevel = result.threat_level?.toLowerCase();
+  const classification = result.class_name?.toLowerCase();
+
+  if (threatLevel === "high" || classification?.includes("phishing")) {
+    return `
+      <div class="recommendation high-risk">
+        <strong>⚠️ HIGH RISK:</strong> This URL appears to be malicious. 
+        <strong>Do not visit this website</strong> or enter any personal information.
+        <ul>
+          <li>Block this URL in your security systems</li>
+          <li>Report it to your security team</li>
+          <li>Warn others about this threat</li>
+        </ul>
+      </div>
+    `;
+  } else if (threatLevel === "medium") {
+    return `
+      <div class="recommendation medium-risk">
+        <strong>⚠️ MEDIUM RISK:</strong> This URL shows some suspicious characteristics.
+        <ul>
+          <li>Exercise caution when visiting</li>
+          <li>Do not enter sensitive information</li>
+          <li>Verify the website's legitimacy through other means</li>
+          <li>Use additional security measures if you must visit</li>
+        </ul>
+      </div>
+    `;
+  } else if (threatLevel === "low" || classification?.includes("legitimate")) {
+    return `
+      <div class="recommendation low-risk">
+        <strong>✅ LOW RISK:</strong> This URL appears to be legitimate.
+        <ul>
+          <li>The website is likely safe to visit</li>
+          <li>Still exercise normal web browsing caution</li>
+          <li>Verify HTTPS encryption when entering sensitive data</li>
+        </ul>
+      </div>
+    `;
+  } else {
+    return `
+      <div class="recommendation unknown-risk">
+        <strong>❓ UNKNOWN:</strong> Unable to determine the risk level.
+        <ul>
+          <li>Exercise caution when visiting</li>
+          <li>Manually verify the website's legitimacy</li>
+          <li>Do not enter sensitive information until verified</li>
+        </ul>
+      </div>
+    `;
+  }
 }
 
 // ====== SCAN HISTORY ======
@@ -998,3 +1379,39 @@ function displayScanHistory(history) {
     scanHistoryBody.appendChild(row);
   });
 }
+
+// Add this function to your main.js file (you can place it near the other modal functions):
+
+/**
+ * Function to close modal
+ */
+function closeModal(modalElement) {
+  if (modalElement) {
+    modalElement.remove();
+  }
+}
+
+// Alternative version that finds the modal if you pass any child element
+function closeModalFromChild(element) {
+  const modal = element.closest(".modal-overlay");
+  if (modal) {
+    modal.remove();
+  }
+}
+
+// Also add keyboard support for closing modal with Escape key
+document.addEventListener("keydown", function (event) {
+  if (event.key === "Escape") {
+    const modal = document.querySelector(".modal-overlay");
+    if (modal) {
+      modal.remove();
+    }
+  }
+});
+
+// Add click-outside-to-close functionality
+document.addEventListener("click", function (event) {
+  if (event.target.classList.contains("modal-overlay")) {
+    event.target.remove();
+  }
+});

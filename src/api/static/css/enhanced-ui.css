@@ -712,6 +712,42 @@
   display: none;
 }
 
+/* Risk level status badges for User Dashboard */
+.status-badge.risk-low {
+  background-color: #10b981;
+  color: white;
+}
+
+.status-badge.risk-medium {
+  background-color: #f59e0b;
+  color: white;
+}
+
+.status-badge.risk-high {
+  background-color: #ef4444;
+  color: white;
+}
+
+.status-badge.risk-suspicious {
+  /* New class for Suspicious */
+  background-color: #6b7280;
+  color: white;
+}
+
+/* Keep the old class for backward compatibility */
+.status-badge.risk-unknown {
+  background-color: #6b7280;
+  color: white;
+}
+
+.status-badge {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
 /* Responsive adjustments */
 @media screen and (max-width: 768px) {
   .dashboard-header {

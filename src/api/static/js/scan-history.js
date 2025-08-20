@@ -100,4 +100,39 @@ document.addEventListener("DOMContentLoaded", function () {
       this.classList.toggle("open");
     });
   });
+
+  // Add this function to display enhanced history:
+
+  function displayEnhancedScanHistory(history) {
+    const historyTableBody = document.getElementById("scan-history-body");
+    if (!historyTableBody) return;
+
+    historyTableBody.innerHTML = "";
+
+    history.forEach((scan) => {
+      const row = document.createElement("tr");
+      row.className = "history-item";
+
+      // Format threat level display
+      const threatLevel = scan.threat_level || "unknown";
+      const finalConfidence = scan.final_confidence ? (scan.final_confidence * 100).toFixed(1) + "%" : "N/A";
+
+      row.innerHTML = `
+            <td class="url-column">
+                <a href="#" class="url-link">${scan.url}</a>
+            </td>
+            <td>${scan.ip_address || "--"}</td>
+            <td>${scan.hosting_provider || "--"}</td>
+            <td>
+                <span class="threat-${threatLevel}">${scan.disposition || "Unknown"}</span>
+                <div class="confidence-mini">${finalConfidence}</div>
+            </td>
+            <td>${new Date(scan.timestamp).toLocaleDateString()}</td>
+            <td>${scan.brand || "Unknown"}</td>
+            <td>${scan.source || "Manual"}</td>
+        `;
+
+      historyTableBody.appendChild(row);
+    });
+  }
 });
