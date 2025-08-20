@@ -108,3 +108,9 @@ async def init_db():
     await create_admin_user()
     
     print("Database initialization complete")
+
+# Add indexes for frequently queried fields
+async def create_indexes():
+    await scan_history_collection.create_index([("user_id", 1)])
+    await scan_history_collection.create_index([("timestamp", -1)])
+    await users_collection.create_index([("username", 1)], unique=True)

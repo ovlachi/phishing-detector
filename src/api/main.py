@@ -13,6 +13,14 @@ import os
 import traceback
 from pathlib import Path
 from fastapi.staticfiles import StaticFiles
+import asyncio
+import aiohttp
+from dotenv import load_dotenv
+
+load_dotenv()  # Load environment variables from .env file
+
+GOOGLE_API_KEY = os.getenv('GOOGLE_SAFE_BROWSING_API_KEY')
+VIRUSTOTAL_API_KEY = os.getenv('VIRUSTOTAL_API_KEY')
 
 app = FastAPI()
 # Mount static files directory
@@ -1388,3 +1396,23 @@ async def admin_scans_test():
 async def test_endpoint():
     """Simple test endpoint to verify routing"""
     return {"message": "Test endpoint working", "status": "success"}
+
+async def fetch_url_content(session, url):
+    try:
+        async with session.get(url, timeout=10) as response:
+            return await response.text()
+    except Exception as e:
+        return f"Error: {str(e)}"
+
+async def process_batch_urls(urls):
+    async with aiohttp.ClientSession() as session:
+        tasks = [fetch_url_content(session, url) for url in urls]
+        return await asyncio.gather(*tasks)
+
+async def process_url_batch(urls, chunk_size=5):
+    results = []
+    for i in range(0, len(urls), chunk_size):
+        chunk = urls[i:i + chunk_size]
+        chunk_results = await process_batch_urls(chunk)
+        results.extend(chunk_results)
+    return results

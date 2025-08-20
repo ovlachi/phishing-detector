@@ -505,108 +505,97 @@ function sortBatchResults() {
 function initializeBatchResults(resultsData) {
   console.log("Initializing batch results with REAL API data:", resultsData);
 
-  // Store the results data for later use
   window.batchResultsData = resultsData || [];
-  window.batchResults = resultsData || []; // Ensure both variables are set
+  window.batchResults = resultsData || [];
 
-  // Get the batch results container
   const batchResults = document.getElementById("batch-results");
   if (!batchResults) {
     console.error("Batch results container not found");
     return;
   }
 
-  // Clear previous results
   batchResults.innerHTML = "";
 
-  // Generate result items using REAL API data structure
   window.batchResultsData.forEach((result, index) => {
     const resultItem = document.createElement("div");
     resultItem.className = "batch-result-item";
 
-    // Map real API data to display format
-    // Fixed code:
+    // Improved risk classification based on both ML and threat intel
     let displayRisk = "Unknown";
     let riskClass = "unknown";
 
     if (result.error) {
       displayRisk = "Suspicious";
       riskClass = "suspicious";
-    } else if (result.class_name) {
-      switch (result.class_name.toLowerCase()) {
-        case "legitimate":
-          displayRisk = "Safe";
-          riskClass = "safe";
-          break;
-        case "credential phishing":
-          displayRisk = "High Risk";
-          riskClass = "high";
-          break;
-        case "malware distribution":
-          displayRisk = "High Risk";
-          riskClass = "high";
-          break;
-        default:
-          displayRisk = "Suspicious";
-          riskClass = "suspicious";
-      }
     } else {
-      // No error but no classification = suspicious
-      displayRisk = "Suspicious";
-      riskClass = "suspicious";
+      // First check threat level from threat intelligence
+      const threatLevel = (result.threat_level || "").toLowerCase();
+      if (threatLevel === "high" || threatLevel === "critical") {
+        displayRisk = "High Risk";
+        riskClass = "high";
+      } else if (threatLevel === "medium") {
+        displayRisk = "Medium Risk";
+        riskClass = "medium";
+      } else if (result.class_name) {
+        // Then consider ML classification
+        switch (result.class_name.toLowerCase()) {
+          case "legitimate":
+            if (threatLevel === "low" || threatLevel === "safe") {
+              displayRisk = "Safe";
+              riskClass = "safe";
+            } else {
+              displayRisk = "Suspicious";
+              riskClass = "suspicious";
+            }
+            break;
+          case "phishing":
+          case "credential phishing":
+          case "malware":
+          case "malware distribution":
+            displayRisk = "High Risk";
+            riskClass = "high";
+            break;
+          default:
+            displayRisk = "Suspicious";
+            riskClass = "suspicious";
+        }
+      } else {
+        displayRisk = "Suspicious";
+        riskClass = "suspicious";
+      }
     }
 
-    // Calculate confidence from real API data
+    // Calculate confidence score
     let confidence = 0;
-    if (result.final_confidence) {
+    if (result.final_confidence !== undefined) {
       confidence = Math.round(result.final_confidence * 100);
+    } else if (result.url_confidence_score !== undefined) {
+      confidence = Math.round(result.url_confidence_score * 100);
     } else if (result.probabilities) {
       confidence = Math.round(Math.max(...Object.values(result.probabilities)) * 100);
     }
 
-    // Create the UI elements
-    const riskIndicator = document.createElement("div");
-    riskIndicator.className = `risk-indicator ${riskClass}`;
-    resultItem.appendChild(riskIndicator);
+    // Create UI elements
+    resultItem.innerHTML = `
+      <div class="risk-indicator ${riskClass}"></div>
+      <div class="url-info">
+        <div class="url-text">${result.url || "Unknown URL"}</div>
+        <div class="url-status ${riskClass}">${displayRisk}</div>
+      </div>
+      <div class="confidence-indicator">${confidence}%</div>
+      <div class="batch-actions-cell">
+        <button class="batch-action" data-index="${index}">Details</button>
+      </div>
+    `;
 
-    const urlInfo = document.createElement("div");
-    urlInfo.className = "url-info";
-
-    const urlText = document.createElement("div");
-    urlText.className = "url-text";
-    urlText.textContent = result.url || "Unknown URL";
-
-    const urlStatus = document.createElement("div");
-    urlStatus.className = `url-status ${riskClass}`;
-    urlStatus.textContent = displayRisk;
-
-    urlInfo.appendChild(urlText);
-    urlInfo.appendChild(urlStatus);
-    resultItem.appendChild(urlInfo);
-
-    // Add confidence using real data
-    const confidenceIndicator = document.createElement("div");
-    confidenceIndicator.className = "confidence-indicator";
-    confidenceIndicator.textContent = confidence + "%";
-    resultItem.appendChild(confidenceIndicator);
-
-    // Add actions
-    const actions = document.createElement("div");
-    actions.className = "batch-actions-cell";
-
-    const detailsButton = document.createElement("button");
-    detailsButton.className = "batch-action";
-    detailsButton.textContent = "Details";
-    detailsButton.dataset.index = index;
-
-    detailsButton.addEventListener("click", function (e) {
+    // Add click handler for details button
+    const detailsButton = resultItem.querySelector(".batch-action");
+    detailsButton.addEventListener("click", (e) => {
       e.preventDefault();
       e.stopPropagation();
-      showBatchDetails(parseInt(this.dataset.index));
+      showBatchDetails(index);
     });
 
-    actions.appendChild(detailsButton);
-    resultItem.appendChild(actions);
     batchResults.appendChild(resultItem);
   });
 
@@ -627,84 +616,76 @@ function initializeBatchResults(resultsData) {
 function updateBatchSummary(resultsData) {
   console.log("=== phishr_batch_scan.js updateBatchSummary called ===");
   console.log("ResultsData:", resultsData);
-  console.log("Updating batch summary stats with data:", resultsData);
 
-  // Count risk levels
   const stats = {
     total: resultsData.length,
     high: 0,
     medium: 0,
     safe: 0,
-    suspicious: 0 // Add suspicious category
+    suspicious: 0 // Added suspicious category
   };
 
-  // Count URLs by risk level - FIXED VERSION
   resultsData.forEach((result) => {
-    console.log("Processing result for summary:", result);
+    console.log("Processing result:", result);
 
     // Check if this is a failed analysis or unknown result
     if (result.error || !result.class_name || result.class_name === null) {
-      stats.suspicious++; // Count as suspicious
-      console.log("  -> Counted as SUSPICIOUS");
+      stats.suspicious++; // Count as suspicious instead of safe
+      console.log("Counted as suspicious (error/unknown)");
       return;
     }
 
-    if (result.class_name) {
-      switch (result.class_name.toLowerCase()) {
-        case "legitimate":
+    const threatLevel = result.threat_level || "unknown";
+    console.log(`Threat level: ${threatLevel}`);
+
+    switch (threatLevel.toLowerCase()) {
+      case "high":
+      case "critical":
+        stats.high++;
+        console.log("Counted as high risk");
+        break;
+      case "medium":
+        stats.medium++;
+        console.log("Counted as medium risk");
+        break;
+      case "low":
+      case "safe":
+        // Only count as safe if ML actually classified it as legitimate
+        if (result.class_name.toLowerCase() === "legitimate") {
           stats.safe++;
-          console.log("  -> Counted as SAFE");
-          break;
-        case "credential phishing":
-        case "malware distribution":
-          stats.high++;
-          console.log("  -> Counted as HIGH");
-          break;
-        default:
+          console.log("Counted as safe (legitimate)");
+        } else {
           stats.suspicious++;
-          console.log("  -> Counted as SUSPICIOUS (unknown class)");
-          break;
-      }
-    } else {
-      stats.suspicious++;
-      console.log("  -> Counted as SUSPICIOUS (no class)");
+          console.log("Counted as suspicious (non-legitimate)");
+        }
+        break;
+      default:
+        stats.suspicious++;
+        console.log("Counted as suspicious (default case)");
+        break;
     }
   });
 
   console.log("Final stats:", stats);
 
-  // Update summary stats in the UI
-  const totalUrls = document.getElementById("total-urls");
-  if (totalUrls) {
-    console.log("Setting total-urls to:", stats.total);
-    totalUrls.textContent = stats.total;
-  } else {
-    console.error("Element 'total-urls' not found");
-  }
+  // Update UI elements with error checking
+  const elements = {
+    "total-urls": stats.total,
+    "high-risk": stats.high,
+    "medium-risk": stats.medium,
+    "safe-urls": stats.safe,
+    "suspicious-urls": stats.suspicious
+  };
 
-  const highRisk = document.getElementById("high-risk");
-  if (highRisk) {
-    console.log("Setting high-risk to:", stats.high);
-    highRisk.textContent = stats.high;
-  } else {
-    console.error("Element 'high-risk' not found");
-  }
-
-  const mediumRisk = document.getElementById("medium-risk");
-  if (mediumRisk) {
-    console.log("Setting medium-risk to:", stats.medium);
-    mediumRisk.textContent = stats.medium;
-  } else {
-    console.error("Element 'medium-risk' not found");
-  }
-
-  const safeUrls = document.getElementById("safe-urls");
-  if (safeUrls) {
-    console.log("Setting safe-urls to:", stats.safe);
-    safeUrls.textContent = stats.safe;
-  } else {
-    console.error("Element 'safe-urls' not found");
-  }
+  Object.entries(elements).forEach(([id, value]) => {
+    const element = document.getElementById(id);
+    if (element) {
+      element.textContent = value;
+      console.log(`Updated ${id} to ${value}`);
+    } else {
+      console.warn(`Element with id '${id}' not found`);
+    }
+  });
 }
 
 /**
@@ -773,3 +754,18 @@ function updateBatchSummary(resultsData) {
 
 // Initialize everything
 initializeBatchScanHandlers();
+
+/**
+ * Update the progress bar display
+ *
+ * @param {number} processed - Number of processed items
+ * @param {number} total - Total number of items
+ */
+function updateProgress(processed, total) {
+  const progress = (processed / total) * 100;
+  const progressBar = document.querySelector(".progress-bar");
+  if (progressBar) {
+    progressBar.style.width = `${progress}%`;
+    progressBar.textContent = `${Math.round(progress)}%`;
+  }
+}
