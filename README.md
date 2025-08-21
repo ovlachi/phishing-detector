@@ -12,7 +12,7 @@ An advanced web-based phishing detection system integrating hybrid machine learn
 ### Core Functionality
 
 - **Single URL Analysis** - Real-time phishing detection with confidence scoring
-- **Batch Processing** - CSV upload for bulk URL scanning (up to 1000 URLs)
+- **Batch Processing** - CSV upload for bulk URL scanning (up to 10000 URLs)
 - **User Authentication** - Secure JWT-based login and registration system
 - **Scan History** - Complete tracking of all scanning activities with MongoDB
 - **Admin Dashboard** - Administrative controls and system monitoring
