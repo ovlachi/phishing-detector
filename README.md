@@ -184,33 +184,8 @@ python tests/test_with_real_urls.py
 - **CORS Configuration**: Restricted cross-origin access
 - **SQL Injection Prevention**: Parameterized queries
 
-## 🤝 Contributing
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
 
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🎓 Academic Context
-
-This project was developed as part of advanced cybersecurity research at Swinburne University of Technology, focusing on machine learning applications in threat detection and web security.
-
-## 📞 Support
-
-For support, email [your-email@example.com] or create an issue in the GitHub repository.
-
-## 🙏 Acknowledgments
-
-- Swinburne University of Technology
-- VirusTotal API
-- Google Safe Browsing API
-- Open source machine learning community
-
----
-
-**⚠️ Disclaimer**: This tool is for educational and research purposes. Always verify results with additional security measures in production environments.
