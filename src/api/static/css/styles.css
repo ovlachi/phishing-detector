@@ -293,7 +293,7 @@ h1 {
 .hero-text {
   font-size: 1.125rem;
   color: var(--text-medium);
-  margin-bottom: 0;
+  margin-bottom: 1rem;
   max-width: 100%;
 }
 

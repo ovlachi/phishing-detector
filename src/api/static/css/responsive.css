@@ -13,6 +13,7 @@
 
   .hero-text {
     font-size: 1rem;
+    margin-bottom: 1rem;
   }
 
   .auth-container {
@@ -103,6 +104,7 @@
   .hero-text {
     text-align: center;
     font-size: 1rem;
+    margin-bottom: 1rem;
   }
 
   .scan-form {

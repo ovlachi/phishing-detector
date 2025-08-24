@@ -1,0 +1,98 @@
+<!-- filepath: /Users/georgeovlachi/LEARNING/phishing-detector/index.html -->
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PhishR - Phishing Detection with Machine Learning</title>
+    <meta name="description" content="State-of-the art Phishing detection using Machine Learning" />
+
+    <!-- CSS Files -->
+    <link rel="stylesheet" href="src/api/static/css/normalize.css" />
+    <link rel="stylesheet" href="src/api/static/css/styles.css" />
+    <link rel="stylesheet" href="src/api/static/css/responsive.css" />
+  </head>
+  <body>
+    <div class="container">
+      <!-- Sticky Header -->
+      <header class="site-header">
+        <div class="logo-container">
+          <a href="/" class="logo">
+            <div class="logo-placeholder">
+              <img src="src/api/static/img/logo-placeholder.svg" alt="PhishR Logo" />
+            </div>
+            <span class="brand-name">PhishR</span>
+          </a>
+        </div>
+        <nav class="main-nav">
+          <div class="auth-buttons">
+            <a href="#" class="btn btn-outline" onclick="showDemo()">Log In</a>
+            <a href="#" class="btn btn-primary" onclick="showDemo()">Register</a>
+          </div>
+        </nav>
+      </header>
+
+      <!-- Hero Section -->
+      <section class="hero-section">
+        <div class="hero-content">
+          <h1>PhishR - Phishing Detection with Machine Learning</h1>
+          <p class="hero-text">State-of-the art Phishing detection using Machine Learning for content based feature detection and improved prediction.</p>
+
+          <!-- Demo Scanner -->
+          <div class="scan-widget">
+            <form class="scan-form" onsubmit="showDemoResults(event)">
+              <input type="url" id="url-input" placeholder="Enter URL to scan (Demo Mode)" required />
+              <button type="submit" class="btn btn-primary scan-button">Scan Now</button>
+            </form>
+          </div>
+        </div>
+        <div class="hero-image">
+          <!-- Add your hero illustration here -->
+        </div>
+      </section>
+
+      <!-- Demo Results -->
+      <div id="demo-results" style="display: none">
+        <div class="scan-results">
+          <h2>🎯 Demo Results</h2>
+          <div class="result-card">
+            <div class="result-header">
+              <span class="result-icon">✅</span>
+              <h3>Demo Analysis Complete</h3>
+            </div>
+            <p><strong>Status:</strong> This is a demonstration of the PhishR interface</p>
+            <p><strong>Classification:</strong> Demo Mode</p>
+            <p><strong>Note:</strong> For real-time URL analysis with ML detection, the full FastAPI backend is required.</p>
+
+            <div class="demo-notice">
+              <h4>🚀 Full Application Features:</h4>
+              <ul>
+                <li>Real-time ML-based phishing detection</li>
+                <li>URL feature extraction and analysis</li>
+                <li>Threat intelligence integration</li>
+                <li>Technical security recommendations</li>
+                <li>User authentication and history</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      function showDemo() {
+        alert("Demo Mode: Authentication features require the full FastAPI backend application.");
+      }
+
+      function showDemoResults(event) {
+        event.preventDefault();
+        const url = document.getElementById("url-input").value;
+
+        if (url) {
+          document.getElementById("demo-results").style.display = "block";
+          document.getElementById("demo-results").scrollIntoView({ behavior: "smooth" });
+        }
+      }
+    </script>
+  </body>
+</html>
