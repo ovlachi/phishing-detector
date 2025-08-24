@@ -1,0 +1,30 @@
+# Core FastAPI and web framework
+fastapi==0.108.0
+uvicorn[standard]==0.25.0
+python-multipart==0.0.6
+jinja2==3.1.2
+
+# Authentication and security  
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+python-dotenv==1.0.0
+
+# Database
+pymongo==4.6.0
+motor==3.3.2
+
+# HTTP requests and web scraping
+aiohttp==3.9.1
+beautifulsoup4==4.12.2
+requests==2.31.0
+
+# Deployment
+mangum==0.17.0
+
+# URL processing
+tldextract==5.1.1
+
+# Machine Learning (Python 3.13 compatible - precompiled wheels)
+scikit-learn>=1.4.0
+pandas>=2.1.0
+numpy>=1.24.0

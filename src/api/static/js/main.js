@@ -1415,3 +1415,13 @@ document.addEventListener("click", function (event) {
     event.target.remove();
   }
 });
+
+// Enhanced sticky header scroll effect
+window.addEventListener("scroll", function () {
+  const header = document.querySelector(".site-header");
+  if (window.scrollY > 20) {
+    header.classList.add("scrolled");
+  } else {
+    header.classList.remove("scrolled");
+  }
+});

@@ -1,10 +1,15 @@
 [build]
   command = "pip install -r requirements.txt"
-  functions = "netlify/functions"
   publish = "src/api/static"
+  functions = "netlify/functions"
 
 [build.environment]
   PYTHON_VERSION = "3.11"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
 
 [[redirects]]
   from = "/api/*"

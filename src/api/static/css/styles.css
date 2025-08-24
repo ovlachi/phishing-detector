@@ -92,6 +92,20 @@ ul {
   justify-content: space-between;
   align-items: center;
   padding: var(--spacing-lg) 0;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background: var(--light-blue-bg);
+}
+
+/* Create a proper sticky container */
+.sticky-header-container {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background: var(--light-blue-bg); /* Match your page background */
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .logo-container {
@@ -138,8 +152,78 @@ ul {
 }
 
 .auth-buttons {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1001;
   display: flex;
-  gap: var(--spacing-md);
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  padding: 8px 12px;
+  border-radius: 25px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.auth-buttons .btn {
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  border: none;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.auth-buttons .btn-outline {
+  background: transparent;
+  color: var(--primary-blue);
+  border: 1px solid var(--primary-blue);
+}
+
+.auth-buttons .btn-outline:hover {
+  background: var(--primary-blue);
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(33, 150, 243, 0.3);
+}
+
+.auth-buttons .btn-primary {
+  background: var(--primary-blue);
+  color: white;
+}
+
+.auth-buttons .btn-primary:hover {
+  background: #1976d2;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(33, 150, 243, 0.4);
+}
+
+/* Hide the original header auth buttons to prevent duplication */
+/* .site-header .auth-buttons {
+  display: none;
+} */
+
+.hero-content {
+  flex: 1;
+}
+
+/* Enhanced sticky state when scrolled */
+.site-header.scrolled {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Make auth buttons more prominent in sticky header */
+.site-header .auth-buttons .btn {
+  transition: all 0.2s ease;
+}
+
+.site-header.scrolled .auth-buttons .btn {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 /* Buttons
@@ -184,7 +268,8 @@ ul {
   display: flex;
   align-items: center;
   gap: var(--spacing-xxl);
-  padding: var(--spacing-xxl) 0;
+  padding: var(--spacing-lg) 0;
+  background: var(--light-blue-bg);
 }
 
 .hero-content {
@@ -194,30 +279,41 @@ ul {
 .hero-image {
   flex: 1;
   display: flex;
-  justify-content: center;
   align-items: center;
+  justify-content: center;
 }
 
 h1 {
-  font-size: 2.5rem;
+  font-size: 2.2rem;
   line-height: 1.2;
   color: var(--primary-blue);
-  margin-bottom: var(--spacing-lg);
+  margin-bottom: var(--spacing-sm);
 }
 
 .hero-text {
   font-size: 1.125rem;
   color: var(--text-medium);
-  margin-bottom: var(--spacing-xl);
-  max-width: 600px;
+  margin-bottom: 0;
+  max-width: 100%;
+}
+
+/* Enhanced sticky state */
+.site-header.sticky .auth-buttons .btn {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 /* Scan Widget NEW
 ----------------------------------------*/
 /* Results Section Styling */
 .results-section {
-  padding: 3rem 0;
-  background-color: #f8f9fa;
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  margin: 20px 0;
+  border: 1px solid #e0e0e0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  /* Remove: max-height: any value */
+  /* Remove: overflow-y: auto */
 }
 
 .results-container {
@@ -320,7 +416,7 @@ h1 {
 }
 
 .probability-bar {
-  background-color: #3498db;
+  background-color: #f8f9fa;
   height: 100%;
   border-radius: 4px;
 }
@@ -407,8 +503,14 @@ h1 {
 /* Scan Results
 ----------------------------------------*/
 .scan-results {
-  border-top: 1px solid var(--light-blue-bg);
-  padding-top: var(--spacing-lg);
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  margin: 20px 0;
+  border: 1px solid #e0e0e0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  /* Remove: max-height: any value */
+  /* Remove: overflow-y: auto */
 }
 
 .result-heading {
@@ -888,8 +990,10 @@ body {
 .main-content {
   flex: 1;
   overflow-y: auto;
-  padding: 2rem;
-  background-color: #f5f9ff;
+  padding: 0;
+  background: var(--light-blue-bg);
+  /* Remove min-height constraint */
+  /* min-height: calc(100vh - 80px); */
 }
 
 /* Welcome Section */
@@ -1000,13 +1104,75 @@ body {
   color: #666;
 }
 
-/* Results Section Styling */
+/* Results Section - Main container */
 .results-section {
   background: white;
-  padding: 1.5rem;
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  margin-bottom: 2rem;
+  padding: 20px;
+  margin: 20px 0;
+  border: 1px solid #e0e0e0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  /* Remove height constraints to allow full content visibility */
+  /* max-height: none; */
+  overflow: visible;
+}
+
+/* Scan Results Container - Remove all height constraints */
+.scan-results {
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  margin: 20px 0;
+  border: 1px solid #e0e0e0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  /* Remove any max-height constraints */
+  /* Allow natural height expansion */
+  overflow: visible;
+}
+
+.scan-results-container {
+  margin-top: 20px;
+  /* Remove: max-height: any value */
+  /* Remove: overflow-y: auto */
+}
+
+/* Individual result items should be scrollable if needed */
+.result-item {
+  margin-bottom: 20px;
+}
+
+.result-item:last-child {
+  margin-bottom: 0;
+}
+
+/* Technical details section - make it expandable */
+.technical-details {
+  background: #f8f9fa;
+  border-radius: 6px;
+  padding: 15px;
+  margin-top: 15px;
+  border: 1px solid #e9ecef;
+  max-height: 300px; /* Only limit individual sections, not the whole result */
+  overflow-y: auto;
+}
+
+/* URL Analysis section */
+.url-analysis {
+  background: #f0f8ff;
+  border-radius: 6px;
+  padding: 15px;
+  margin-top: 15px;
+  border: 1px solid #b3d9ff;
+}
+
+/* Security recommendation section */
+.security-recommendation {
+  background: #fff3cd;
+  border-radius: 6px;
+  padding: 15px;
+  margin-top: 15px;
+  border: 1px solid #ffeaa7;
+  border-left: 4px solid #f39c12;
 }
 
 /* Enhanced Analysis Sections */
