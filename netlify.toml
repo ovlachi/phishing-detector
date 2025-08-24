@@ -1,5 +1,5 @@
 [build]
-  # No build command needed for static site
+  # No build command needed for static site - remove pip install
   command = "echo 'Building static demo site'"
   
   # Publish the static files (HTML, CSS, JS)
