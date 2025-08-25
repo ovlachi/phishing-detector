@@ -7,7 +7,7 @@
 
 An advanced web-based phishing detection system integrating hybrid machine learning models with real-time URL analysis capabilities.
 
-## 🚀 Features
+## Features
 
 ### Core Functionality
 
@@ -33,7 +33,7 @@ An advanced web-based phishing detection system integrating hybrid machine learn
 - **Export Capabilities** - Download scan results in multiple formats
 - **Enhanced Error Handling** - Clear explanations for failed analyses
 
-## 🏗️ Architecture
+## Architecture
 
 ### Frontend Architecture
 
@@ -63,7 +63,7 @@ An advanced web-based phishing detection system integrating hybrid machine learn
 - **Fallback**: SQLite for local development
 - **Design**: Horizontal scaling support with efficient indexing
 
-## 🛠️ Installation
+## Installation
 
 ### Prerequisites
 
@@ -109,7 +109,7 @@ DEBUG=False
 CORS_ORIGINS=http://localhost:3000,http://127.0.0.1:8000
 ```
 
-## 🚀 Deployment
+## Deployment
 
 ### Netlify Deployment
 
@@ -134,7 +134,7 @@ docker build -t phishing-detector .
 docker run -p 8000:8000 --env-file .env phishing-detector
 ```
 
-## 📖 API Documentation
+## API Documentation
 
 Once running, visit:
 
@@ -153,7 +153,7 @@ GET /scan-history      - Retrieve scan history
 GET /health           - System health check
 ```
 
-## 🧪 Testing
+## Testing
 
 ```bash
 # Run all tests
@@ -167,7 +167,7 @@ python -m pytest tests/test_batch_processing.py -v
 python tests/test_with_real_urls.py
 ```
 
-## 📊 Performance
+## Performance
 
 - **Single URL Analysis**: < 5 seconds average
 - **Batch Processing**: 100 URLs in ~2 minutes
@@ -175,7 +175,7 @@ python tests/test_with_real_urls.py
 - **False Positives**: < 2%
 - **Concurrent Users**: Supports 50+ simultaneous users
 
-## 🔒 Security Features
+## Security Features
 
 - **Input Validation**: Comprehensive URL and file validation
 - **Rate Limiting**: API endpoint protection
@@ -186,6 +186,6 @@ python tests/test_with_real_urls.py
 
 
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
