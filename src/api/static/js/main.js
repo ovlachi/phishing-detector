@@ -1044,6 +1044,45 @@ function showResultDetails(index) {
               </div>
             </div>
 
+            <!-- Confidence Breakdown - How Combined Confidence is Calculated -->
+            ${result.confidence_breakdown ? `
+              <div class="confidence-breakdown-section" style="background: #e8f4fd; padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 4px solid #2196F3;">
+                <h4>📈 How Combined Confidence is Calculated</h4>
+                <p style="color: #666; margin-bottom: 10px; font-size: 0.9em;">
+                  Combined confidence = (ML × 50%) + (VirusTotal × 30%) + (Google Safe Browsing × 20%)
+                </p>
+                <div style="display: grid; gap: 10px;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: white; border-radius: 6px;">
+                    <span><strong>🤖 ML Model (50% weight):</strong></span>
+                    <span style="font-weight: bold; color: ${result.confidence_breakdown.ml_confidence > 0.5 ? '#dc3545' : '#28a745'}">
+                      ${(result.confidence_breakdown.ml_confidence * 100).toFixed(1)}%
+                    </span>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: white; border-radius: 6px;">
+                    <span><strong>🛡️ VirusTotal (30% weight):</strong></span>
+                    <span style="font-weight: bold; color: ${result.confidence_breakdown.virustotal_confidence > 0.5 ? '#dc3545' : '#28a745'}">
+                      ${(result.confidence_breakdown.virustotal_confidence * 100).toFixed(1)}%
+                    </span>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: white; border-radius: 6px;">
+                    <span><strong>🔍 Google Safe Browsing (20% weight):</strong></span>
+                    <span style="font-weight: bold; color: ${(result.confidence_breakdown.google_safe_browsing_confidence || 0.5) > 0.5 ? '#dc3545' : '#28a745'}">
+                      ${((result.confidence_breakdown.google_safe_browsing_confidence || 0.5) * 100).toFixed(1)}%
+                    </span>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #f0f0f0; border-radius: 6px; border: 2px solid #333;">
+                    <span><strong>📊 Combined Confidence:</strong></span>
+                    <span style="font-weight: bold; font-size: 1.2em; color: #333;">
+                      ${result.final_confidence ? (result.final_confidence * 100).toFixed(1) + "%" : "N/A"}
+                    </span>
+                  </div>
+                </div>
+                <p style="color: #666; margin-top: 10px; font-size: 0.85em; font-style: italic;">
+                  💡 Higher confidence in threat sources = higher combined score = more dangerous URL
+                </p>
+              </div>
+            ` : ''}
+
             <!-- ML Analysis Details -->
             ${
               result.probabilities
@@ -1072,30 +1111,42 @@ function showResultDetails(index) {
                 : ""
             }
 
-            <!-- Analysis Sources -->
+            <!-- Analysis Sources with Detailed Results -->
             <div class="analysis-sources">
-              <h4>🛡️ Analysis Sources</h4>
+              <h4>🛡️ Threat Intelligence Sources</h4>
               <div class="sources-grid">
-                <div class="source-item">
-                  <span class="source-icon">🤖</span>
-                  <div class="source-details">
-                    <strong>Machine Learning</strong>
-                    <small>${result.probabilities ? "Analysis completed" : "Analysis failed"}</small>
+                <div class="source-item" style="flex-direction: column; align-items: flex-start;">
+                  <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                    <span class="source-icon">🤖</span>
+                    <strong>Machine Learning Model</strong>
                   </div>
+                  <small style="color: #666;">
+                    ${result.probabilities ? `Prediction: ${result.class_name} (${(Math.max(...Object.values(result.probabilities)) * 100).toFixed(1)}% confident)` : "Analysis failed"}
+                  </small>
                 </div>
-                <div class="source-item">
-                  <span class="source-icon">🛡️</span>
-                  <div class="source-details">
+                <div class="source-item" style="flex-direction: column; align-items: flex-start;">
+                  <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                    <span class="source-icon">🛡️</span>
                     <strong>VirusTotal</strong>
-                    <small>${result.url_features?.virustotal_status || "Checked"}</small>
                   </div>
+                  <small style="color: #666;">
+                    ${result.threat_intelligence?.virustotal?.url_analysis?.status === "success"
+                      ? `Detections: ${result.threat_intelligence.virustotal.url_analysis.malicious || 0} malicious, ${result.threat_intelligence.virustotal.url_analysis.suspicious || 0} suspicious / ${result.threat_intelligence.virustotal.url_analysis.total || 0} total`
+                      : result.threat_intelligence?.virustotal?.url_analysis?.error || "Checked"}
+                  </small>
                 </div>
-                <div class="source-item">
-                  <span class="source-icon">🔧</span>
-                  <div class="source-details">
-                    <strong>URL Features</strong>
-                    <small>${result.url_features ? Object.keys(result.url_features).length + " features extracted" : "No features"}</small>
+                <div class="source-item" style="flex-direction: column; align-items: flex-start;">
+                  <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                    <span class="source-icon">🔍</span>
+                    <strong>Google Safe Browsing</strong>
                   </div>
+                  <small style="color: #666;">
+                    ${result.threat_intelligence?.google_safe_browsing?.status === "success"
+                      ? (result.threat_intelligence.google_safe_browsing.safe
+                          ? "✅ No threats found"
+                          : `⚠️ ${result.threat_intelligence.google_safe_browsing.threats_found} threat(s): ${result.threat_intelligence.google_safe_browsing.threat_types?.join(", ") || "Unknown"}`)
+                      : result.threat_intelligence?.google_safe_browsing?.error || "Checked"}
+                  </small>
                 </div>
               </div>
             </div>
