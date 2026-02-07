@@ -45,6 +45,7 @@ from src.api.auth import (
     get_password_hash, ACCESS_TOKEN_EXPIRE_MINUTES, get_user_from_cookie
 )
 from src.predict import load_model_and_pipeline, classify_url, classify_batch
+from src.api.predict import predict as enhanced_predict
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -88,6 +89,9 @@ class PredictionResult(BaseModel):
     final_confidence: Optional[float] = None
     url_features: Optional[Dict[str, Any]] = None
     url_confidence_score: Optional[float] = None
+    # Threat intelligence fields
+    threat_intelligence: Optional[Dict[str, Any]] = None
+    confidence_breakdown: Optional[Dict[str, float]] = None
 
 class BatchPredictionResult(BaseModel):
     results: List[PredictionResult]
@@ -382,9 +386,9 @@ async def api_classify_url(request: UrlRequest, request_obj: Request):
         
         url = str(request.url)
         print(f"Processing URL: {url}")  # Debug output
-        
-        # Use the enhanced classify_url function
-        result = classify_url(url, classifier, pipeline)
+
+        # Use the enhanced prediction with threat intelligence (VirusTotal + Google Safe Browsing)
+        result = enhanced_predict(url)
         
         # Try to save to scan history if user is logged in
         token = request_obj.cookies.get("access_token")
@@ -408,30 +412,33 @@ async def api_classify_url(request: UrlRequest, request_obj: Request):
                 }
                 await add_scan_record(scan_entry)
         
-        # Return appropriate response including enhanced fields
-        if 'error' in result:
-            # Even with error, return URL-based analysis if available
+        # Return appropriate response including enhanced fields and threat intelligence
+        if 'error' in result and result.get('class_name') == 'Error':
+            # Error case - return URL-based analysis if available
             return PredictionResult(
                 url=url,
-                error=result['error'],
-                threat_level=result.get('threat_level', 'Suspicious'),  # Changed default
+                error=result.get('error'),
+                threat_level=result.get('threat_level', 'unknown'),
                 url_features=result.get('url_features'),
-                url_confidence_score=result.get('url_confidence_score', 0)
+                url_confidence_score=result.get('url_confidence_score', 0),
+                threat_intelligence=result.get('threat_intelligence'),
+                confidence_breakdown=result.get('confidence_breakdown')
             )
         else:
-             # Map class names
-            class_name = result['class']
+            # Success case - return complete enhanced result with threat intelligence
+            class_name = result.get('class_name', 'Unknown')
             if class_name.lower() in ['unknown', 'uncertain']:
                 class_name = 'Suspicious'
-            # Return complete enhanced result
+
             return PredictionResult(
                 url=url,
-                class_id=result['class_id'],
-                class_name=class_name,  # Use mapped class name
-                probabilities=result['probabilities'],
-                threat_level=result.get('threat_level', 'Suspicious'),
+                class_name=class_name,
+                probabilities=result.get('probabilities'),
+                threat_level=result.get('threat_level', 'unknown'),
                 final_confidence=result.get('final_confidence'),
-                url_features=result.get('url_features')
+                url_features=result.get('content_features'),
+                threat_intelligence=result.get('threat_intelligence'),
+                confidence_breakdown=result.get('confidence_breakdown')
             )
     except Exception as e:
         traceback.print_exc()  # Print the full error
@@ -516,9 +523,20 @@ async def api_classify_batch(
             }
             await add_scan_record(scan_entry)
         
-        # Format response including enhanced fields
+        # Format response including enhanced fields and threat intelligence
         response_results = []
         for result in results:
+            # Get enhanced threat intelligence for each URL
+            try:
+                enhanced_result = enhanced_predict(result['url'])
+                threat_intel = enhanced_result.get('threat_intelligence')
+                confidence_breakdown = enhanced_result.get('confidence_breakdown')
+                final_conf = enhanced_result.get('final_confidence', result.get('final_confidence'))
+            except:
+                threat_intel = result.get('threat_intelligence')
+                confidence_breakdown = None
+                final_conf = result.get('final_confidence')
+
             if 'error' in result and result['error']:
                 # Even with error, include URL-based analysis
                 response_results.append(PredictionResult(
@@ -526,18 +544,22 @@ async def api_classify_batch(
                     error=result['error'],
                     threat_level=result.get('threat_level'),
                     url_features=result.get('url_features'),
-                    url_confidence_score=result.get('url_confidence_score', 0)
+                    url_confidence_score=result.get('url_confidence_score', 0),
+                    threat_intelligence=threat_intel,
+                    confidence_breakdown=confidence_breakdown
                 ))
             else:
-                # Include all enhanced fields
+                # Include all enhanced fields with real threat intelligence
                 response_results.append(PredictionResult(
                     url=result['url'],
                     class_id=result['class_id'],
                     class_name=result['class'],
                     probabilities=result['probabilities'],
                     threat_level=result.get('threat_level'),
-                    final_confidence=result.get('final_confidence'),
-                    url_features=result.get('url_features')
+                    final_confidence=final_conf,
+                    url_features=result.get('url_features'),
+                    threat_intelligence=threat_intel,
+                    confidence_breakdown=confidence_breakdown
                 ))
         
         return BatchPredictionResult(
