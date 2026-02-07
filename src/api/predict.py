@@ -2,7 +2,7 @@ import joblib
 import pandas as pd
 import numpy as np
 from pathlib import Path
-from .threat_intelligence import VirusTotalAPI
+from .threat_intelligence import VirusTotalAPI, GoogleSafeBrowsingAPI
 from urllib.parse import urlparse
 from typing import Dict, Any
 import re
@@ -19,8 +19,20 @@ if project_root not in sys.path:
 # Import your existing feature extraction systems
 from src.features.content_features import extract_content_features
 
-# Initialize VirusTotal API
-vt_api = VirusTotalAPI()
+# Initialize threat intelligence APIs
+try:
+    vt_api = VirusTotalAPI()
+    print("✅ VirusTotal API initialized")
+except ValueError as e:
+    print(f"⚠️ VirusTotal API not available: {e}")
+    vt_api = None
+
+try:
+    gsb_api = GoogleSafeBrowsingAPI()
+    print("✅ Google Safe Browsing API initialized")
+except ValueError as e:
+    print(f"⚠️ Google Safe Browsing API not available: {e}")
+    gsb_api = None
 
 # Load your ML models and transformers
 BASE_DIR = Path(__file__).parent.parent.parent
@@ -173,91 +185,134 @@ def get_ml_prediction(url: str) -> Dict:
         }
 
 def get_threat_intelligence(url: str) -> Dict[str, Any]:
-    """Get threat intelligence from VirusTotal"""
-    try:
-        # Get URL report
-        url_report = vt_api.get_url_report(url)
-        
-        # Get domain report
-        domain = urlparse(url).netloc
-        domain_report = vt_api.get_domain_report(domain) if domain else None
-        
-        return {
-            "url_analysis": url_report,
-            "domain_analysis": domain_report,
-            "provider": "virustotal"
-        }
-    except Exception as e:
-        return {
-            "error": str(e),
-            "provider": "virustotal"
-        }
+    """Get threat intelligence from VirusTotal and Google Safe Browsing"""
+    result = {
+        "virustotal": None,
+        "google_safe_browsing": None
+    }
+
+    # Get VirusTotal intelligence
+    if vt_api:
+        try:
+            url_report = vt_api.get_url_report(url)
+            domain = urlparse(url).netloc
+            domain_report = vt_api.get_domain_report(domain) if domain else None
+
+            result["virustotal"] = {
+                "url_analysis": url_report,
+                "domain_analysis": domain_report,
+                "provider": "virustotal"
+            }
+        except Exception as e:
+            result["virustotal"] = {
+                "error": str(e),
+                "provider": "virustotal"
+            }
+
+    # Get Google Safe Browsing intelligence
+    if gsb_api:
+        try:
+            gsb_report = gsb_api.check_url(url)
+            result["google_safe_browsing"] = gsb_report
+        except Exception as e:
+            result["google_safe_browsing"] = {
+                "error": str(e),
+                "provider": "google_safe_browsing"
+            }
+
+    return result
 
 def calculate_combined_threat_level(ml_prediction: Dict, threat_intel: Dict) -> str:
-    """Combine ML prediction with threat intelligence"""
-    
+    """Combine ML prediction with threat intelligence from multiple sources"""
+
     # Get ML threat level
     ml_class = ml_prediction.get('class_name', '').lower()
     ml_confidence = max(ml_prediction.get('probabilities', {}).values()) if ml_prediction.get('probabilities') else 0
-    
+
     ml_threat = "low"
-    if ml_class in ['phishing', 'malware'] and ml_confidence > 0.7:
+    if ml_class in ['phishing', 'malware', 'malicious'] and ml_confidence > 0.7:
         ml_threat = "high"
-    elif ml_class in ['phishing', 'malware'] and ml_confidence > 0.5:
+    elif ml_class in ['phishing', 'malware', 'malicious'] and ml_confidence > 0.5:
         ml_threat = "medium"
     elif ml_class == 'unknown':
         ml_threat = "unknown"
-    
+
     # Get VirusTotal threat level
     vt_threat = "unknown"
-    url_analysis = threat_intel.get("url_analysis", {})
-    if url_analysis and url_analysis.get("status") == "success":
-        vt_threat = url_analysis.get("threat_level", "unknown")
-    
+    vt_data = threat_intel.get("virustotal", {})
+    if vt_data:
+        url_analysis = vt_data.get("url_analysis", {})
+        if url_analysis and url_analysis.get("status") == "success":
+            vt_threat = url_analysis.get("threat_level", "unknown")
+
+    # Get Google Safe Browsing threat level
+    gsb_threat = "unknown"
+    gsb_data = threat_intel.get("google_safe_browsing", {})
+    if gsb_data and gsb_data.get("status") == "success":
+        gsb_threat = gsb_data.get("threat_level", "unknown")
+        # If Google says it's unsafe, that's a strong signal
+        if not gsb_data.get("safe", True):
+            gsb_threat = "high"
+
     # Combine threats (prioritize higher threat levels)
     threat_levels = ["unknown", "low", "suspicious", "medium", "high"]
     ml_level = threat_levels.index(ml_threat) if ml_threat in threat_levels else 0
     vt_level = threat_levels.index(vt_threat) if vt_threat in threat_levels else 0
-    
-    combined_level = max(ml_level, vt_level)
+    gsb_level = threat_levels.index(gsb_threat) if gsb_threat in threat_levels else 0
+
+    combined_level = max(ml_level, vt_level, gsb_level)
     return threat_levels[combined_level]
 
 def predict(url: str) -> Dict:
-    """Enhanced prediction with threat intelligence"""
+    """Enhanced prediction with threat intelligence from ML, VirusTotal, and Google Safe Browsing"""
     try:
         # Get ML prediction using your existing feature extraction system
         ml_result = get_ml_prediction(url)
-        
-        # Get threat intelligence
+
+        # Get threat intelligence from multiple sources
         threat_intel = get_threat_intelligence(url)
-        
+
         # Calculate combined threat level
         combined_threat_level = calculate_combined_threat_level(ml_result, threat_intel)
-        
+
         # Calculate enhanced confidence score
         ml_confidence = max(ml_result.get('probabilities', {}).values()) if ml_result.get('probabilities') else 0
-        
-        # Adjust confidence based on threat intelligence
+
+        # Get VirusTotal confidence
         vt_confidence = 0.5  # Default neutral confidence
-        url_analysis = threat_intel.get("url_analysis", {})
-        if url_analysis and url_analysis.get("status") == "success":
-            total_detections = url_analysis.get("total", 0)
-            if total_detections > 0:
-                clean_ratio = url_analysis.get("harmless", 0) / total_detections
-                threat_ratio = (url_analysis.get("malicious", 0) + url_analysis.get("suspicious", 0)) / total_detections
-                
-                if threat_ratio > 0.3:
-                    vt_confidence = 0.9  # High confidence in threat
-                elif threat_ratio > 0.1:
-                    vt_confidence = 0.7  # Medium confidence in threat
-                elif clean_ratio > 0.8:
-                    vt_confidence = 0.1  # High confidence it's safe
-                else:
-                    vt_confidence = 0.5  # Neutral
-        
-        # Weighted average of ML and VirusTotal confidence
-        final_confidence = (ml_confidence * 0.6) + (vt_confidence * 0.4)
-        
+        vt_data = threat_intel.get("virustotal", {})
+        if vt_data:
+            url_analysis = vt_data.get("url_analysis", {})
+            if url_analysis and url_analysis.get("status") == "success":
+                total_detections = url_analysis.get("total", 0)
+                if total_detections > 0:
+                    clean_ratio = url_analysis.get("harmless", 0) / total_detections
+                    threat_ratio = (url_analysis.get("malicious", 0) + url_analysis.get("suspicious", 0)) / total_detections
+
+                    if threat_ratio > 0.3:
+                        vt_confidence = 0.9  # High confidence in threat
+                    elif threat_ratio > 0.1:
+                        vt_confidence = 0.7  # Medium confidence in threat
+                    elif clean_ratio > 0.8:
+                        vt_confidence = 0.1  # High confidence it's safe
+                    else:
+                        vt_confidence = 0.5  # Neutral
+
+        # Get Google Safe Browsing confidence
+        gsb_confidence = 0.5  # Default neutral confidence
+        gsb_data = threat_intel.get("google_safe_browsing", {})
+        if gsb_data and gsb_data.get("status") == "success":
+            if gsb_data.get("safe", True):
+                gsb_confidence = 0.1  # Safe according to Google
+            else:
+                # Unsafe - high confidence in threat
+                threats_found = gsb_data.get("threats_found", 0)
+                if threats_found > 0:
+                    gsb_confidence = 0.95  # Very high confidence if Google flags it
+
+        # Weighted average: ML (50%), VirusTotal (30%), Google Safe Browsing (20%)
+        final_confidence = (ml_confidence * 0.5) + (vt_confidence * 0.3) + (gsb_confidence * 0.2)
+
         return {
             **ml_result,
             'threat_level': combined_threat_level,
@@ -265,11 +320,12 @@ def predict(url: str) -> Dict:
             'threat_intelligence': threat_intel,
             'confidence_breakdown': {
                 'ml_confidence': ml_confidence,
-                'virustotal_confidence': vt_confidence
+                'virustotal_confidence': vt_confidence,
+                'google_safe_browsing_confidence': gsb_confidence
             },
             'timestamp': datetime.now().isoformat()
         }
-        
+
     except Exception as e:
         return {
             'url': url,
