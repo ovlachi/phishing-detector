@@ -190,15 +190,35 @@ function updateQuickStats(result) {
     }
   }
 
-  // Threat Intelligence
+  // Threat Intelligence - show actual data from VirusTotal and Google Safe Browsing
   const threatIntel = document.getElementById("threat-intel");
   if (threatIntel) {
-    if (result.url_features) {
-      // For now, we'll use a placeholder since we don't have actual threat intel sources
-      threatIntel.textContent = `URL Analysis: ${result.threat_level || "Unknown"}`;
-    } else {
-      threatIntel.textContent = "Not available";
+    let intelText = "Not available";
+
+    // Check VirusTotal data
+    const vtData = result.threat_intelligence?.virustotal?.url_analysis;
+    const gsbData = result.threat_intelligence?.google_safe_browsing;
+
+    if (vtData?.status === "success") {
+      const malicious = vtData.malicious || 0;
+      const suspicious = vtData.suspicious || 0;
+      if (malicious > 0 || suspicious > 0) {
+        intelText = `VT: ${malicious}/${vtData.total} flagged`;
+      } else {
+        intelText = `VT: Clean`;
+      }
     }
+
+    // Add Google Safe Browsing status
+    if (gsbData?.status === "success") {
+      if (!gsbData.safe) {
+        intelText += ` | GSB: ⚠️`;
+      } else {
+        intelText += ` | GSB: ✓`;
+      }
+    }
+
+    threatIntel.textContent = intelText;
   }
 
   // URL Analysis
@@ -244,28 +264,121 @@ function updateQuickStats(result) {
  * @param {Object} result - Result from API
  */
 function populateDetailedAnalysis(result) {
-  // Populate threat sources
+  // Populate threat sources with actual data from VirusTotal and Google Safe Browsing
   const threatSources = document.getElementById("threat-sources");
   if (threatSources) {
     threatSources.innerHTML = "";
 
-    // For now, add a simple placeholder since we don't have actual threat intel
-    const div = document.createElement("div");
-    div.className = "source-item";
+    // ML Model source
+    const mlDiv = document.createElement("div");
+    mlDiv.className = "source-item";
+    const mlIndicator = result.probabilities ? "green" : "yellow";
+    mlDiv.innerHTML = `
+      <div class="source-indicator indicator-${mlIndicator}"></div>
+      <span>🤖 ML Model: ${result.probabilities ? `${result.class_name} (${(Math.max(...Object.values(result.probabilities)) * 100).toFixed(1)}%)` : "Failed"}</span>
+    `;
+    threatSources.appendChild(mlDiv);
 
-    // Determine indicator color based on threat level
-    let indicator = "green";
-    if (result.threat_level === "high" || result.threat_level === "critical") {
-      indicator = "red";
-    } else if (result.threat_level === "medium") {
-      indicator = "yellow";
+    // VirusTotal source
+    const vtDiv = document.createElement("div");
+    vtDiv.className = "source-item";
+    const vtData = result.threat_intelligence?.virustotal?.url_analysis;
+    let vtIndicator = "yellow";
+    let vtText = "Not checked";
+    if (vtData?.status === "success") {
+      const malicious = vtData.malicious || 0;
+      const suspicious = vtData.suspicious || 0;
+      const total = vtData.total || 0;
+      if (malicious > 0 || suspicious > 0) {
+        vtIndicator = "red";
+        vtText = `${malicious} malicious, ${suspicious} suspicious / ${total}`;
+      } else {
+        vtIndicator = "green";
+        vtText = `Clean (${total} engines)`;
+      }
+    } else if (vtData?.error) {
+      vtText = "Error: " + vtData.error;
+    }
+    vtDiv.innerHTML = `
+      <div class="source-indicator indicator-${vtIndicator}"></div>
+      <span>🛡️ VirusTotal: ${vtText}</span>
+    `;
+    threatSources.appendChild(vtDiv);
+
+    // Google Safe Browsing source
+    const gsbDiv = document.createElement("div");
+    gsbDiv.className = "source-item";
+    const gsbData = result.threat_intelligence?.google_safe_browsing;
+    let gsbIndicator = "yellow";
+    let gsbText = "Not checked";
+    if (gsbData?.status === "success") {
+      if (gsbData.safe) {
+        gsbIndicator = "green";
+        gsbText = "No threats found";
+      } else {
+        gsbIndicator = "red";
+        gsbText = `${gsbData.threats_found} threat(s): ${gsbData.threat_types?.join(", ") || "Unknown"}`;
+      }
+    } else if (gsbData?.error) {
+      gsbText = "Error: " + gsbData.error;
+    }
+    gsbDiv.innerHTML = `
+      <div class="source-indicator indicator-${gsbIndicator}"></div>
+      <span>🔍 Google Safe Browsing: ${gsbText}</span>
+    `;
+    threatSources.appendChild(gsbDiv);
+  }
+
+  // Add confidence breakdown section
+  const detailsPanel = document.getElementById("details-panel");
+  if (detailsPanel && result.confidence_breakdown) {
+    // Remove existing confidence breakdown if present
+    const existingBreakdown = document.getElementById("confidence-breakdown-section");
+    if (existingBreakdown) {
+      existingBreakdown.remove();
     }
 
-    div.innerHTML = `
-            <div class="source-indicator indicator-${indicator}"></div>
-            <span>URL Analysis: ${result.threat_level || "Unknown"}</span>
-        `;
-    threatSources.appendChild(div);
+    // Create confidence breakdown section
+    const breakdownDiv = document.createElement("div");
+    breakdownDiv.id = "confidence-breakdown-section";
+    breakdownDiv.className = "detail-section";
+    breakdownDiv.style.cssText = "background: #e8f4fd; padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 4px solid #2196F3;";
+
+    const mlConf = result.confidence_breakdown.ml_confidence || 0;
+    const vtConf = result.confidence_breakdown.virustotal_confidence || 0.5;
+    const gsbConf = result.confidence_breakdown.google_safe_browsing_confidence || 0.5;
+    const finalConf = result.final_confidence || 0;
+
+    breakdownDiv.innerHTML = `
+      <h4 style="margin-top: 0; color: #1976d2;">📈 How Combined Confidence is Calculated</h4>
+      <p style="color: #666; margin-bottom: 12px; font-size: 0.9em;">
+        Combined = (ML × 50%) + (VirusTotal × 30%) + (Google Safe Browsing × 20%)
+      </p>
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: white; border-radius: 6px;">
+          <span><strong>🤖 ML Model (50%)</strong></span>
+          <span style="font-weight: bold; color: ${mlConf > 0.5 ? '#dc3545' : '#28a745'}">${(mlConf * 100).toFixed(1)}%</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: white; border-radius: 6px;">
+          <span><strong>🛡️ VirusTotal (30%)</strong></span>
+          <span style="font-weight: bold; color: ${vtConf > 0.5 ? '#dc3545' : '#28a745'}">${(vtConf * 100).toFixed(1)}%</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: white; border-radius: 6px;">
+          <span><strong>🔍 Google Safe Browsing (20%)</strong></span>
+          <span style="font-weight: bold; color: ${gsbConf > 0.5 ? '#dc3545' : '#28a745'}">${(gsbConf * 100).toFixed(1)}%</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #f0f0f0; border-radius: 6px; border: 2px solid #333; margin-top: 4px;">
+          <span><strong>📊 Combined Confidence</strong></span>
+          <span style="font-weight: bold; font-size: 1.2em; color: #333;">${(finalConf * 100).toFixed(1)}%</span>
+        </div>
+      </div>
+      <p style="color: #666; margin-top: 10px; margin-bottom: 0; font-size: 0.85em; font-style: italic;">
+        💡 Higher % = more likely to be a threat
+      </p>
+    `;
+
+    // Insert at the beginning of details panel
+    detailsPanel.insertBefore(breakdownDiv, detailsPanel.firstChild);
   }
 
   // Populate URL features
