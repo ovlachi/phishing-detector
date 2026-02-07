@@ -7,7 +7,11 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: 3.12.0
-      - key: MONGODB_URI
+      - key: MONGO_URL
         sync: false
-      - key: JWT_SECRET
+      - key: DB_NAME
+        value: phishing_detector
+      - key: VIRUSTOTAL_API_KEY
+        sync: false
+      - key: GOOGLE_SAFE_BROWSING_API_KEY
         sync: false
