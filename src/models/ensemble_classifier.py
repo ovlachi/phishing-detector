@@ -74,11 +74,23 @@ class FeaturePipeline:
         return features_transformed
     
     def load_transformer(self):
-        """Load pre-trained transformer from disk."""
+        """Load pre-trained transformer from disk. Prioritizes binary transformer."""
         try:
-            with open(f"{self.output_dir}/feature_transformer.pkl", 'rb') as f:
-                self.transformer = pickle.load(f)
-            return True
+            # Try binary transformer first (matches binary model)
+            binary_path = f"{self.output_dir}/feature_transformer_binary.pkl"
+            standard_path = f"{self.output_dir}/feature_transformer.pkl"
+
+            if os.path.exists(binary_path):
+                with open(binary_path, 'rb') as f:
+                    self.transformer = pickle.load(f)
+                print("✅ Loaded binary feature transformer")
+                return True
+            elif os.path.exists(standard_path):
+                with open(standard_path, 'rb') as f:
+                    self.transformer = pickle.load(f)
+                return True
+            else:
+                return False
         except FileNotFoundError:
             return False
 
@@ -114,16 +126,20 @@ class PhishingEnsembleClassifier:
         if model_type == 'xgboost':
             default_params = {
                 'objective': 'multi:softprob',
-                'learning_rate': 0.1,
-                'max_depth': 6,
-                'min_child_weight': 1,
+                'learning_rate': 0.05,  # Lower for better generalization
+                'max_depth': 8,  # Increased depth
+                'min_child_weight': 3,  # Prevent overfitting
                 'subsample': 0.8,
                 'colsample_bytree': 0.8,
                 'eval_metric': 'mlogloss',
                 'use_label_encoder': False,
-                'random_state': 42
+                'random_state': 42,
+                'n_estimators': 200,  # More trees
+                'reg_alpha': 0.1,  # L1 regularization
+                'reg_lambda': 1.0,  # L2 regularization
+                'gamma': 0.1  # Minimum loss reduction
             }
-            
+
             # Add class weights for XGBoost - multiclass case requires special handling
             # We don't use scale_pos_weight for multiclass, as it's only for binary classification
             default_params.update(params)
@@ -131,36 +147,41 @@ class PhishingEnsembleClassifier:
             
         elif model_type == 'rf':
             default_params = {
-                'n_estimators': 100,
-                'max_depth': 10,
-                'min_samples_split': 2,
-                'min_samples_leaf': 1,
-                'random_state': 42
+                'n_estimators': 300,  # More trees for better accuracy
+                'max_depth': 15,  # Deeper trees
+                'min_samples_split': 5,  # Prevent overfitting
+                'min_samples_leaf': 2,  # Prevent overfitting
+                'random_state': 42,
+                'n_jobs': -1,  # Use all cores
+                'max_features': 'sqrt'  # Feature subsampling
             }
-            
-            # Add class weights for Random Forest
-            # For sklearn, class_weights needs to be in a specific format
+
+            # Add class weights for Random Forest - always use balanced_subsample for imbalanced data
             if self.class_weights:
                 # Convert string keys to integers for sklearn
                 class_weights_dict = {int(k): v for k, v in self.class_weights.items()}
                 default_params['class_weight'] = class_weights_dict
             else:
-                default_params['class_weight'] = 'balanced'
-                
+                default_params['class_weight'] = 'balanced_subsample'  # Better for imbalanced data
+
             default_params.update(params)
             return RandomForestClassifier(**default_params)
             
         elif model_type == 'gb':
             default_params = {
-                'n_estimators': 100,
-                'learning_rate': 0.1,
-                'max_depth': 3,
-                'random_state': 42
+                'n_estimators': 200,  # More estimators
+                'learning_rate': 0.05,  # Lower for better generalization
+                'max_depth': 5,  # Deeper trees
+                'random_state': 42,
+                'min_samples_split': 5,  # Prevent overfitting
+                'min_samples_leaf': 2,  # Prevent overfitting
+                'subsample': 0.8,  # Stochastic gradient boosting
+                'max_features': 'sqrt'  # Feature subsampling
             }
-            
+
             # Gradient Boosting doesn't support class_weight directly
-            # Will handle this during fitting if needed
-            
+            # Sample weights will be computed in training
+
             default_params.update(params)
             return GradientBoostingClassifier(**default_params)
             
@@ -198,13 +219,14 @@ class PhishingEnsembleClassifier:
             # Create the model
             model = self._create_base_model(model_type, params)
             
-            # Create sample weights for Gradient Boosting if needed
+            # Create sample weights for class imbalance handling
             sample_weight = None
-            if model_type == 'gb' and self.class_weights:
+            if self.class_weights:
                 sample_weight = np.ones(len(y_train))
                 for class_idx, weight in self.class_weights.items():
                     sample_weight[y_train == int(class_idx)] = weight
-            
+                print(f"  Using sample weights: {dict(zip(*np.unique(y_train, return_counts=True)))}")
+
             # Train the model
             if model_type == 'xgboost' and X_val is not None and y_val is not None:
                 # First train with early stopping using validation data
@@ -213,11 +235,12 @@ class PhishingEnsembleClassifier:
                     model.fit(
                         X_train, y_train,
                         eval_set=eval_set,
+                        sample_weight=sample_weight,  # Add sample weights
                         verbose=False
                     )
                 except ValueError:
                     # Fallback if validation fails
-                    model.fit(X_train, y_train)
+                    model.fit(X_train, y_train, sample_weight=sample_weight)
                 
                 # Disable early stopping for ensemble use
                 if hasattr(model, 'set_params'):
@@ -304,21 +327,32 @@ class PhishingEnsembleClassifier:
         return results
     
     def load_model(self):
-        """Load pre-trained ensemble model from disk."""
+        """Load pre-trained ensemble model from disk. Prioritizes binary model for better accuracy."""
         try:
-            # Load ensemble model
+            # Try binary ensemble first (80.5% accuracy vs 71% for 3-class)
+            binary_path = f"{self.output_dir}/binary_ensemble.pkl"
             ensemble_path = f"{self.output_dir}/ensemble_model.pkl"
-            with open(ensemble_path, 'rb') as f:
-                self.ensemble_model = pickle.load(f)
-            
-            # Load base models
-            self.base_models = []
-            for model_type in self.model_types:
-                model_path = f"{self.output_dir}/{model_type}_base_model.pkl"
-                with open(model_path, 'rb') as f:
-                    self.base_models.append(pickle.load(f))
-                    
-            return True
+
+            if os.path.exists(binary_path):
+                with open(binary_path, 'rb') as f:
+                    self.ensemble_model = pickle.load(f)
+                print("✅ Loaded BINARY classifier (Legitimate vs Malicious) - 80.5% accuracy")
+                self.base_models = []  # Binary model is self-contained
+                return True
+            elif os.path.exists(ensemble_path):
+                with open(ensemble_path, 'rb') as f:
+                    self.ensemble_model = pickle.load(f)
+                # Load base models for 3-class ensemble
+                self.base_models = []
+                for model_type in self.model_types:
+                    model_path = f"{self.output_dir}/{model_type}_base_model.pkl"
+                    if os.path.exists(model_path):
+                        with open(model_path, 'rb') as f:
+                            self.base_models.append(pickle.load(f))
+                return True
+            else:
+                raise FileNotFoundError("No ensemble model found")
+
         except FileNotFoundError as e:
             print(f"Error loading model: {str(e)}")
             return False

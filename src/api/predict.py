@@ -27,29 +27,36 @@ BASE_DIR = Path(__file__).parent.parent.parent
 MODEL_DIR = BASE_DIR / "data" / "processed" / "models"
 PROCESSED_DIR = BASE_DIR / "data" / "processed"
 
-# Load models - using your existing model files
+# Load models - using binary classifier for better accuracy (80.5% vs 71%)
 try:
-    # Try to load the ensemble model first (usually the best performing)
-    if (MODEL_DIR / "ensemble_model.pkl").exists():
+    # Try to load the binary ensemble model first (best performing - 80.5% accuracy)
+    if (MODEL_DIR / "binary_ensemble.pkl").exists():
+        model = joblib.load(MODEL_DIR / "binary_ensemble.pkl")
+        model_name = "binary_ensemble"
+        # Load matching binary transformer
+        feature_transformer = joblib.load(PROCESSED_DIR / "feature_transformer_binary.pkl")
+        print("✅ Using BINARY classifier (Legitimate vs Malicious)")
+    elif (MODEL_DIR / "ensemble_model.pkl").exists():
         model = joblib.load(MODEL_DIR / "ensemble_model.pkl")
         model_name = "ensemble"
+        feature_transformer = joblib.load(PROCESSED_DIR / "feature_transformer.pkl")
     elif (MODEL_DIR / "xgboost_base_model.pkl").exists():
         model = joblib.load(MODEL_DIR / "xgboost_base_model.pkl")
         model_name = "xgboost"
+        feature_transformer = joblib.load(PROCESSED_DIR / "feature_transformer.pkl")
     elif (MODEL_DIR / "rf_base_model.pkl").exists():
         model = joblib.load(MODEL_DIR / "rf_base_model.pkl")
         model_name = "random_forest"
+        feature_transformer = joblib.load(PROCESSED_DIR / "feature_transformer.pkl")
     elif (MODEL_DIR / "gb_base_model.pkl").exists():
         model = joblib.load(MODEL_DIR / "gb_base_model.pkl")
         model_name = "gradient_boosting"
+        feature_transformer = joblib.load(PROCESSED_DIR / "feature_transformer.pkl")
     else:
         raise FileNotFoundError("No suitable model found")
     
-    # Load the actual fitted feature transformer
-    feature_transformer = joblib.load(PROCESSED_DIR / "feature_transformer.pkl")
-    
     print(f"✅ ML models loaded successfully: {model_name}")
-    print(f"✅ Feature transformer loaded from: {PROCESSED_DIR / 'feature_transformer.pkl'}")
+    print(f"✅ Feature transformer loaded")
     
 except FileNotFoundError as e:
     print(f"⚠️  Warning: Could not load ML models: {e}")
@@ -132,9 +139,9 @@ def get_ml_prediction(url: str) -> Dict:
         n_classes = len(probabilities)
         
         if n_classes == 2:
-            class_mapping = {0: 'legitimate', 1: 'phishing'}
+            class_mapping = {0: 'Legitimate', 1: 'Malicious'}
         elif n_classes == 3:
-            class_mapping = {0: 'legitimate', 1: 'phishing', 2: 'malware'}
+            class_mapping = {0: 'Legitimate', 1: 'Credential Phishing', 2: 'Malware Distribution'}
         else:
             # Handle other cases
             class_mapping = {i: f'class_{i}' for i in range(n_classes)}

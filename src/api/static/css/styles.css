@@ -158,11 +158,9 @@ ul {
   z-index: 1001;
   display: flex;
   gap: 10px;
-  background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(10px);
   padding: 8px 12px;
   border-radius: 25px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
@@ -201,15 +199,6 @@ ul {
   background: #1976d2;
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(33, 150, 243, 0.4);
-}
-
-/* Hide the original header auth buttons to prevent duplication */
-/* .site-header .auth-buttons {
-  display: none;
-} */
-
-.hero-content {
-  flex: 1;
 }
 
 /* Enhanced sticky state when scrolled */
@@ -304,18 +293,6 @@ h1 {
 
 /* Scan Widget NEW
 ----------------------------------------*/
-/* Results Section Styling */
-.results-section {
-  background: white;
-  border-radius: 8px;
-  padding: 20px;
-  margin: 20px 0;
-  border: 1px solid #e0e0e0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  /* Remove: max-height: any value */
-  /* Remove: overflow-y: auto */
-}
-
 .results-container {
   margin-top: 1.5rem;
 }
@@ -502,17 +479,6 @@ h1 {
 
 /* Scan Results
 ----------------------------------------*/
-.scan-results {
-  background: white;
-  border-radius: 8px;
-  padding: 20px;
-  margin: 20px 0;
-  border: 1px solid #e0e0e0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  /* Remove: max-height: any value */
-  /* Remove: overflow-y: auto */
-}
-
 .result-heading {
   font-size: 1.25rem;
   color: var(--success-green);
@@ -799,23 +765,6 @@ h1 {
   font-weight: 500;
 }
 
-.batch-url-textarea {
-  width: 100%;
-  padding: 0.75rem;
-  border: 1px solid #ced4da;
-  border-radius: 4px;
-  resize: vertical;
-  font-family: inherit;
-  font-size: 0.9rem;
-  margin-bottom: 1rem;
-}
-
-.batch-url-textarea:focus {
-  border-color: #80bdff;
-  outline: 0;
-  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
-}
-
 .form-controls {
   display: flex;
   justify-content: flex-end;
@@ -835,36 +784,6 @@ h1 {
   display: inline-block;
   margin-right: 1rem;
   padding: 0.375rem 0;
-}
-
-/* Scan History Styles */
-.scan-history-table-container {
-  overflow-x: auto;
-  margin-top: 1.5rem;
-}
-
-.scan-history-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.9rem;
-}
-
-.scan-history-table th,
-.scan-history-table td {
-  padding: 0.75rem;
-  text-align: left;
-  border-bottom: 1px solid #e9ecef;
-}
-
-.scan-history-table th {
-  background-color: #f8f9fa;
-  font-weight: 600;
-  position: sticky;
-  top: 0;
-}
-
-.scan-history-table tbody tr:hover {
-  background-color: #f1f3f5;
 }
 
 .sortable {
@@ -899,10 +818,11 @@ h1 {
   color: #6c757d;
 }
 
-/* Dashboard Layout Styles - Add to your styles.css */
+/* Dashboard Layout Styles
+----------------------------------------*/
 
-/* Main Layout Container */
-body {
+/* Dashboard-specific body styles - applied via class */
+body.dashboard-layout {
   display: flex;
   margin: 0;
   height: 100vh;
@@ -1145,36 +1065,6 @@ body {
   margin-bottom: 0;
 }
 
-/* Technical details section - make it expandable */
-.technical-details {
-  background: #f8f9fa;
-  border-radius: 6px;
-  padding: 15px;
-  margin-top: 15px;
-  border: 1px solid #e9ecef;
-  max-height: 300px; /* Only limit individual sections, not the whole result */
-  overflow-y: auto;
-}
-
-/* URL Analysis section */
-.url-analysis {
-  background: #f0f8ff;
-  border-radius: 6px;
-  padding: 15px;
-  margin-top: 15px;
-  border: 1px solid #b3d9ff;
-}
-
-/* Security recommendation section */
-.security-recommendation {
-  background: #fff3cd;
-  border-radius: 6px;
-  padding: 15px;
-  margin-top: 15px;
-  border: 1px solid #ffeaa7;
-  border-left: 4px solid #f39c12;
-}
-
 /* Enhanced Analysis Sections */
 .enhanced-analysis {
   margin: 15px 0;
@@ -1221,63 +1111,9 @@ body {
   border-radius: 4px;
 }
 
-/* Analysis Sources */
-.analysis-sources {
-  margin-top: 15px;
-}
-
-.source-item {
-  display: flex;
-  justify-content: space-between;
-  margin: 8px 0;
-  padding: 5px 0;
-  border-bottom: 1px solid #e9ecef;
-}
-
 .source-label {
   font-weight: bold;
   color: #495057;
-}
-
-/* Batch Results Enhancements */
-.batch-summary {
-  margin: 15px 0;
-  padding: 15px;
-  background: #f8f9fa;
-  border-radius: 8px;
-}
-
-.summary-stats {
-  display: flex;
-  gap: 15px;
-  justify-content: space-around;
-}
-
-.stat {
-  padding: 10px 15px;
-  border-radius: 6px;
-  font-weight: bold;
-  text-align: center;
-}
-
-.stat.high-risk {
-  background: #f8d7da;
-  color: #721c24;
-}
-
-.stat.medium-risk {
-  background: #fff3cd;
-  color: #856404;
-}
-
-.stat.low-risk {
-  background: #d4edda;
-  color: #155724;
-}
-
-.stat.unknown-risk {
-  background: #d6d6d6;
-  color: #383d41;
 }
 
 /* Table Status Classes */
@@ -1294,13 +1130,6 @@ body {
 .status-low-risk {
   color: #28a745;
   font-weight: bold;
-}
-
-.url-cell {
-  max-width: 300px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 /* Unknown Result Styling */
@@ -1414,15 +1243,6 @@ body {
   justify-content: center;
   align-items: center;
   z-index: 1000;
-}
-
-.modal-content {
-  background: white;
-  border-radius: 8px;
-  max-width: 600px;
-  max-height: 80vh;
-  overflow-y: auto;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 }
 
 .modal-header {
@@ -1837,8 +1657,13 @@ body {
   line-height: 1.4;
 }
 
-/* Make modal wider for detailed view */
+/* Modal content styling */
 .modal-content {
+  background: white;
+  border-radius: 8px;
   max-width: 800px;
   width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 }
