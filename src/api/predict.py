@@ -313,8 +313,37 @@ def predict(url: str) -> Dict:
         # Weighted average: ML (50%), VirusTotal (30%), Google Safe Browsing (20%)
         final_confidence = (ml_confidence * 0.5) + (vt_confidence * 0.3) + (gsb_confidence * 0.2)
 
+        # Override classification based on threat intelligence
+        # If threat intel finds threats, don't show "Legitimate" - it's confusing for users
+        final_class_name = ml_result.get('class_name', 'Unknown')
+
+        # Check if Google Safe Browsing found threats
+        gsb_found_threat = (
+            gsb_data and
+            gsb_data.get("status") == "success" and
+            not gsb_data.get("safe", True)
+        )
+
+        # Check if VirusTotal found significant threats
+        vt_found_threat = False
+        if vt_data:
+            url_analysis = vt_data.get("url_analysis", {})
+            if url_analysis and url_analysis.get("status") == "success":
+                malicious = url_analysis.get("malicious", 0)
+                suspicious = url_analysis.get("suspicious", 0)
+                if malicious > 0 or suspicious > 2:
+                    vt_found_threat = True
+
+        # Override classification if threat intel found threats but ML said Legitimate
+        if final_class_name == "Legitimate" and (gsb_found_threat or vt_found_threat):
+            if gsb_found_threat and vt_found_threat:
+                final_class_name = "Malicious"  # Both sources agree it's bad
+            else:
+                final_class_name = "Suspicious"  # One source flagged it
+
         return {
             **ml_result,
+            'class_name': final_class_name,  # Use the potentially overridden classification
             'threat_level': combined_threat_level,
             'final_confidence': final_confidence,
             'threat_intelligence': threat_intel,

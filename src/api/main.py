@@ -396,12 +396,13 @@ async def api_classify_url(request: UrlRequest, request_obj: Request):
             user = await get_user_from_cookie(token)
             if user:
                 # Create scan history entry with enhanced fields
-                disposition = result.get('class') or ('Suspicious' if result.get('error') else 'Unknown')
+                # Use class_name from enhanced prediction (includes threat intel override)
+                disposition = result.get('class_name') or ('Suspicious' if result.get('error') else 'Suspicious')
                 scan_entry = {
                     "user_id": str(user.id),
                     "url": url,
-                    "disposition": disposition,  # ← UPDATED
-                    "classification": disposition,  # ← UPDATED
+                    "disposition": disposition,
+                    "classification": disposition,
                     "probabilities": result.get('probabilities'),
                     "timestamp": datetime.utcnow(),
                     "source": "Single Scan",
@@ -505,14 +506,18 @@ async def api_classify_batch(
         
         # Save results to scan history
         for result in results:
-            # Fix: Handle failed content fetches properly
-            disposition = result.get('class') or ('Suspicious' if result.get('error') else 'Unknown')
+            # Get enhanced prediction to get the overridden class_name
+            try:
+                enhanced_for_history = enhanced_predict(result['url'])
+                disposition = enhanced_for_history.get('class_name') or ('Suspicious' if result.get('error') else 'Suspicious')
+            except:
+                disposition = result.get('class') or ('Suspicious' if result.get('error') else 'Suspicious')
             # Create scan history entry with enhanced fields for all results
             scan_entry = {
                 "user_id": str(user.id),
                 "url": result['url'],
-                "disposition": disposition,  # ← UPDATED
-                "classification": disposition,  # ← UPDATED
+                "disposition": disposition,
+                "classification": disposition,
                 "probabilities": result.get('probabilities'),
                 "timestamp": datetime.utcnow(),
                 "source": "Batch Scan",
@@ -542,20 +547,24 @@ async def api_classify_batch(
                 response_results.append(PredictionResult(
                     url=result['url'],
                     error=result['error'],
-                    threat_level=result.get('threat_level'),
+                    threat_level=enhanced_result.get('threat_level', result.get('threat_level')),
                     url_features=result.get('url_features'),
                     url_confidence_score=result.get('url_confidence_score', 0),
                     threat_intelligence=threat_intel,
                     confidence_breakdown=confidence_breakdown
                 ))
             else:
-                # Include all enhanced fields with real threat intelligence
+                # Use the class_name from enhanced_predict which includes threat intel override
+                # This ensures "Suspicious" or "Malicious" is shown when threat intel finds threats
+                final_class_name = enhanced_result.get('class_name', result['class'])
+                final_threat_level = enhanced_result.get('threat_level', result.get('threat_level'))
+
                 response_results.append(PredictionResult(
                     url=result['url'],
                     class_id=result['class_id'],
-                    class_name=result['class'],
+                    class_name=final_class_name,
                     probabilities=result['probabilities'],
-                    threat_level=result.get('threat_level'),
+                    threat_level=final_threat_level,
                     final_confidence=final_conf,
                     url_features=result.get('url_features'),
                     threat_intelligence=threat_intel,
