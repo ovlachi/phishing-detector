@@ -33,3 +33,4 @@ mangum==0.17.0
 
 # URL processing
 tldextract==5.1.1
+python-whois==0.8.0
