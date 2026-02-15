@@ -226,4 +226,71 @@
   }
 }
 
+/* Dashboard Sidebar Responsive */
+@media (max-width: 991.98px) {
+  /* Show sidebar toggle on tablet and below */
+  .sidebar-toggle {
+    display: flex;
+  }
+
+  /* Hide sidebar by default on mobile */
+  body.dashboard-layout .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    transform: translateX(-100%);
+  }
+
+  /* Show sidebar when active */
+  body.dashboard-layout .sidebar.sidebar-open {
+    transform: translateX(0);
+  }
+
+  /* Main content takes full width */
+  body.dashboard-layout .main-content {
+    margin-left: 0;
+    padding-top: 70px;
+  }
+
+  /* Prevent body scroll when sidebar is open */
+  body.sidebar-active {
+    overflow: hidden;
+  }
+}
+
+@media (max-width: 767.98px) {
+  /* Adjust main content padding on mobile */
+  body.dashboard-layout .main-content {
+    padding: 70px 15px 20px 15px;
+  }
+
+  /* Scanner section responsive */
+  .scanner-section .scan-form {
+    flex-direction: column;
+  }
+
+  .scanner-section .scan-form input {
+    width: 100%;
+  }
+
+  .scanner-section .scan-form button {
+    width: 100%;
+  }
+
+  /* Welcome section */
+  .welcome-section h1 {
+    font-size: 1.5rem;
+  }
+
+  /* Scan history table scroll */
+  .scan-history-table-container {
+    overflow-x: auto;
+  }
+
+  .scan-history-table {
+    min-width: 600px;
+  }
+}
+
 /* NO MORE DUPLICATE RULES BELOW THIS LINE */

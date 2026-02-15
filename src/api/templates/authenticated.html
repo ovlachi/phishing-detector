@@ -11,8 +11,18 @@
     <link rel="stylesheet" href="/src/api/static/css/phishr_premium_button_styles.css" />
   </head>
   <body class="dashboard-layout">
+    <!-- Mobile Sidebar Toggle -->
+    <button class="sidebar-toggle" id="sidebar-toggle" aria-label="Toggle sidebar">
+      <span class="toggle-line"></span>
+      <span class="toggle-line"></span>
+      <span class="toggle-line"></span>
+    </button>
+
+    <!-- Sidebar Overlay (for mobile) -->
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
     <!-- Left Sidebar Navigation -->
-    <div class="sidebar">
+    <div class="sidebar" id="sidebar">
       <div class="sidebar-logo">
         <img src="/src/api/static/img/logo-placeholder.svg" alt="PhishR Logo" />
         <span>PhishR</span>
@@ -258,5 +268,26 @@
     <script src="/src/api/static/js/phishr_enhanced_ui_controller.js"></script>
     <script src="/src/api/static/js/phishr_batch_scan.js"></script>
     <script src="/src/api/static/js/main.js"></script>
+    <script>
+      // Sidebar toggle for mobile
+      const sidebarToggle = document.getElementById('sidebar-toggle');
+      const sidebar = document.getElementById('sidebar');
+      const sidebarOverlay = document.getElementById('sidebar-overlay');
+
+      sidebarToggle.addEventListener('click', function() {
+        this.classList.toggle('active');
+        sidebar.classList.toggle('sidebar-open');
+        sidebarOverlay.classList.toggle('active');
+        document.body.classList.toggle('sidebar-active');
+      });
+
+      // Close sidebar when clicking overlay
+      sidebarOverlay.addEventListener('click', function() {
+        sidebarToggle.classList.remove('active');
+        sidebar.classList.remove('sidebar-open');
+        sidebarOverlay.classList.remove('active');
+        document.body.classList.remove('sidebar-active');
+      });
+    </script>
   </body>
 </html>
