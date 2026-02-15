@@ -81,14 +81,54 @@
   }
 
   .site-header {
-    flex-direction: column;
-    gap: var(--spacing-lg);
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-md);
+    position: relative;
   }
 
+  /* Show hamburger menu on mobile */
+  .hamburger-menu {
+    display: flex;
+  }
+
+  /* Hide nav by default on mobile */
   .main-nav {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: var(--white);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    padding: var(--spacing-lg);
+    z-index: 1001;
+    border-radius: 0 0 var(--border-radius-lg) var(--border-radius-lg);
+  }
+
+  /* Show nav when hamburger is active */
+  .main-nav.nav-open {
+    display: block;
+  }
+
+  /* Reset auth buttons positioning for mobile menu */
+  .auth-buttons {
+    position: static;
+    display: flex;
     flex-direction: column;
+    gap: var(--spacing-md);
+    padding: 0;
+    backdrop-filter: none;
+    border: none;
+    border-radius: 0;
+  }
+
+  .auth-buttons .btn {
     width: 100%;
-    gap: var(--spacing-lg);
+    text-align: center;
+    padding: 12px 16px;
+    border-radius: var(--border-radius-md);
   }
 
   .nav-links {

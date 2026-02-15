@@ -15,14 +15,22 @@
       <header class="site-header">
         <div class="logo-container">
           <a href="/" class="logo">
-            <!-- Logo placeholder - replace with actual logo -->
             <div class="logo-placeholder">
               <img src="/src/api/static/img/logo-placeholder.svg" alt="PhishR Logo" />
             </div>
             <span class="brand-name">PhishR</span>
           </a>
         </div>
-        <nav class="main-nav">
+
+        <!-- Hamburger Menu Button (Mobile) -->
+        <button class="hamburger-menu" id="hamburger-btn" aria-label="Toggle menu">
+          <span class="hamburger-line"></span>
+          <span class="hamburger-line"></span>
+          <span class="hamburger-line"></span>
+        </button>
+
+        <!-- Navigation -->
+        <nav class="main-nav" id="main-nav">
           <div class="auth-buttons">
             <a href="/login" class="btn btn-outline">Log In</a>
             <a href="/register" class="btn btn-primary">Register</a>
@@ -114,5 +122,12 @@
     </div>
 
     <script src="/src/api/static/js/login.js" defer></script>
+    <script>
+      // Hamburger menu toggle
+      document.getElementById('hamburger-btn').addEventListener('click', function() {
+        this.classList.toggle('active');
+        document.getElementById('main-nav').classList.toggle('nav-open');
+      });
+    </script>
   </body>
 </html>
