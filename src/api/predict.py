@@ -325,17 +325,41 @@ def predict(url: str) -> Dict:
         )
 
         # Check if VirusTotal found significant threats
+        # Require at least 3 malicious detections OR >5% detection rate to avoid false positives
         vt_found_threat = False
+        vt_says_safe = False
         if vt_data:
             url_analysis = vt_data.get("url_analysis", {})
             if url_analysis and url_analysis.get("status") == "success":
                 malicious = url_analysis.get("malicious", 0)
                 suspicious = url_analysis.get("suspicious", 0)
-                if malicious > 0 or suspicious > 2:
+                harmless = url_analysis.get("harmless", 0)
+                total = url_analysis.get("total", 1)
+
+                detection_ratio = (malicious + suspicious) / total if total > 0 else 0
+
+                # Only flag as threat if significant detections (not just 1-2 false positives)
+                if malicious >= 3 or detection_ratio > 0.05:
                     vt_found_threat = True
 
-        # Override classification if threat intel found threats but ML said Legitimate
-        if final_class_name == "Legitimate" and (gsb_found_threat or vt_found_threat):
+                # Consider VT says it's safe if >70% harmless and <3% malicious
+                if harmless / total > 0.7 and detection_ratio < 0.03:
+                    vt_says_safe = True
+
+        # Check if Google Safe Browsing says it's safe
+        gsb_says_safe = (
+            gsb_data and
+            gsb_data.get("status") == "success" and
+            gsb_data.get("safe", False)
+        )
+
+        # Override classification based on threat intelligence
+        # Priority 1: If BOTH threat intel sources say it's SAFE but ML says Malicious -> trust threat intel
+        if final_class_name == "Malicious" and vt_says_safe and gsb_says_safe:
+            final_class_name = "Legitimate"  # Both threat intel sources say it's safe
+
+        # Priority 2: If threat intel found threats but ML said Legitimate
+        elif final_class_name == "Legitimate" and (gsb_found_threat or vt_found_threat):
             if gsb_found_threat and vt_found_threat:
                 final_class_name = "Malicious"  # Both sources agree it's bad
             else:
