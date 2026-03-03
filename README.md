@@ -200,8 +200,8 @@ phishing-detector/
 ## Test Credentials
 
 For testing purposes:
-- **Username**: `testuser`
-- **Password**: `TestPassword123!`
+- **Username**: `test3`
+- **Password**: `TestUser@123!`
 
 ## License
 
